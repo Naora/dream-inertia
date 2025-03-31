@@ -1,3 +1,3 @@
 (library
  (name dream_inertia)
- (libraries dream))
+ (libraries dream fmt))

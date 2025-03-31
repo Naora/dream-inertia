@@ -8,8 +8,6 @@ type event =
   }
 [@@deriving yojson]
 
-let inertia = Dream_inertia.init (fun i -> Index.render i)
-
 let () =
   Dream.run
   @@ Dream.logger
@@ -23,6 +21,8 @@ let () =
              }
              |> yojson_of_event
            in
-           Dream_inertia.render inertia request ~component:"Event" ~props:event)
+           App.Inertia.render request ~component:"Home" ~props:event)
+       ; Dream.get "/about" (fun request ->
+           App.Inertia.render request ~component:"About" ~props:(`Assoc []))
        ]
 ;;

@@ -12,6 +12,7 @@ bug-reports: "https://github.com/username/reponame/issues"
 depends: [
   "ocaml"
   "dream"
+  "fmt"
   "yojson"
   "ppx_yojson_conv"
   "dune" {>= "3.14"}

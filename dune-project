@@ -19,7 +19,7 @@
  (name dream_inertia)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dream yojson ppx_yojson_conv dune)
+ (depends ocaml dream fmt yojson ppx_yojson_conv dune)
  (tags
   (topics "to describe" your project)))
 

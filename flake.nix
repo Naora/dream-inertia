@@ -30,6 +30,7 @@
           ];
           buildInputs = [
             ocamlPackages.dream
+            ocamlPackages.fmt
             ocamlPackages.yojson
             ocamlPackages.ppx_yojson_conv
           ];

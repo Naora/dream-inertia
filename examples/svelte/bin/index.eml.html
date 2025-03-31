@@ -1,4 +1,4 @@
-let render inertia =
+let render app head =
   <!DOCTYPE html>
   <html class="h-full bg-gray-100">
   <head>
@@ -6,13 +6,12 @@ let render inertia =
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
-    <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=smoothscroll,NodeList.prototype.forEach,Promise,Object.values,Object.assign" defer></script>
     <!-- if development -->
     <script type="module" src="http://localhost:5173/@vite/client"></script>
     <script type="module" src="http://localhost:5173/views/main.js"></script>
-    <%s! Dream_inertia.inertia_head inertia %>
+    <%s! head %>
   </head>
   <body class="font-sans leading-none text-gray-700 antialiased">
-    <%s! Dream_inertia.inertia inertia %>
+    <%s! app %>
   </body>
   </html>
