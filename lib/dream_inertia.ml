@@ -5,8 +5,6 @@ module type View = sig
 end
 
 module type Inertia = sig
-  type t
-
   val render
     :  component:string
     -> props:props
@@ -15,48 +13,47 @@ module type Inertia = sig
 end
 
 module Make (V : View) : Inertia = struct
-  type t
+  type partial =
+    { data_keys : string list
+    ; component : string
+    }
 
-  let is_inertia_request request =
-    Dream.header request "X-Inertia" = Some "true"
+  and kind =
+    | Initial
+    | Inertia
+    | Partial of partial
+
+  let get_data_keys data_keys =
+    String.split_on_char ',' data_keys
+    |> List.filter_map (fun s ->
+      match s |> String.trim with
+      | "" -> None
+      | _ as r -> Some r)
   ;;
 
-  (* let handle_partial_reload request component props =
-     match
-     ( Dream.header request "X-Inertia-Partial-Data"
-     , Dream.header request "X-Inertia-Partial-Component" )
-     with
-     | Some data_keys_str, Some partial_component
-     when partial_component = component ->
-     (try
-     let requested_keys =
-     String.split_on_char ',' data_keys_str
-     |> List.map String.trim
-     |> List.filter (( <> ) "")
-     in
-     match props with
-     | `Assoc current_props ->
-     let filtered_props =
-     List.filter (fun (k, _) -> List.mem k requested_keys) current_props
-     in
-     `Assoc filtered_props
-     | _ -> props
-     with
-     | _ ->
-     Dream.error (fun log ->
-     log
-     ~request
-     "Failed to parse X-Inertia-Partial-Data: %s"
-     data_keys_str);
-     props)
-     | _ -> props
-     ;; *)
+  let request_kind request =
+    let i = Dream.header request "X-Inertia" in
+    let d = Dream.header request "X-Inertia-Partial-Data" in
+    let c = Dream.header request "X-Inertia-Partial-Component" in
+    match i, d, c with
+    | Some "true", Some dk, Some component ->
+      let data_keys = get_data_keys dk in
+      Partial { data_keys; component }
+    | Some "true", _, _ -> Inertia
+    | _, _, _ -> Initial
+  ;;
 
-  let head _t = "<!-- inertia head -->"
-
-  let app props =
-    Yojson.Safe.to_string props
-    |> Fmt.str {html|<div id="app" data-page='%s'></div> |html}
+  let handle_partial_reload partial component props =
+    match partial with
+    | p when p.component = component ->
+      (match props with
+       | `Assoc current_props ->
+         let filtered_props =
+           List.filter (fun (k, _) -> List.mem k p.data_keys) current_props
+         in
+         `Assoc filtered_props
+       | _ -> props)
+    | _ -> props
   ;;
 
   let render ~component ~props request =
@@ -68,11 +65,18 @@ module Make (V : View) : Inertia = struct
         ; "version", `String "1"
         ]
     in
-    if is_inertia_request request
-    then
-      Dream.json ~headers:[ "Vary", "Inertia"; "X-Inertia", "true" ]
-      @@ Yojson.Safe.to_string page_object
-    else
-      Dream.respond @@ V.render ~app:(app page_object) ~head:(head page_object)
+    let headers = [ "Vary", "Inertia"; "X-Inertia", "true" ] in
+    match request_kind request with
+    | Initial ->
+      let app =
+        Yojson.Safe.to_string page_object
+        |> Fmt.str {html|<div id="app" data-page='%s'></div> |html}
+      in
+      let head = "<!-- inertia head -->" in
+      Dream.respond @@ V.render ~app ~head
+    | Inertia -> Dream.json ~headers @@ Yojson.Safe.to_string page_object
+    | Partial p ->
+      let _ = handle_partial_reload p component props in
+      Dream.json ~headers @@ Yojson.Safe.to_string page_object
   ;;
 end
