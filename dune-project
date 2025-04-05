@@ -19,7 +19,7 @@
  (name dream_inertia)
  (synopsis "Inertia protocol for OCaml Dream")
  (description "Server side implementation of the Inertia protocol for OCaml Dream web framework")
- (depends ocaml dream fmt yojson ppx_yojson_conv alcotest dune)
+ (depends ocaml dream fmt yojson ppx_yojson_conv dune)
  (tags
   (topics inertia dream protocol web)))
 
