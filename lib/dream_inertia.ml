@@ -21,9 +21,7 @@ module Page_object = struct
   let is_version_stale t request =
     match Dream.header request "X-Inertia-Version", t.version with
     | Some rv, Some pv -> rv <> pv
-    | Some _, None -> false
-    | None, Some _ -> true
-    | None, None -> false
+    | _, _ -> false
   ;;
 
   let partial_reload ~component ~requested_keys t =
