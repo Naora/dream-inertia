@@ -5,22 +5,22 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github Naora/dream-inertia))
 
-(authors "Author Name")
+(authors "Joris Gundermann")
 
-(maintainers "Maintainer Name")
+(maintainers "Joris Gundermann")
 
-(license LICENSE)
+(license MIT)
 
 (documentation https://url/to/documentation)
 
 (package
  (name dream_inertia)
- (synopsis "A short synopsis")
- (description "A longer description")
- (depends ocaml dream fmt yojson ppx_yojson_conv dune)
+ (synopsis "Inertia protocol for OCaml Dream")
+ (description "Server side implementation of the Inertia protocol for OCaml Dream web framework")
+ (depends ocaml dream fmt yojson ppx_yojson_conv alcotest dune)
  (tags
-  (topics "to describe" your project)))
+  (topics inertia dream protocol web)))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
