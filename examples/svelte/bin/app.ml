@@ -1,5 +1,4 @@
-module View : Dream_inertia.View = struct
-  let render ~app ~head = Index.render app head
-end
-
-module Inertia = Dream_inertia.Make (View)
+module Inertia = Dream_inertia.Make (struct
+    let render ~app ~head = Index.render app head
+    let version () = Some "3"
+  end)

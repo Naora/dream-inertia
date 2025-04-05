@@ -1,27 +1,69 @@
 type props = Yojson.Safe.t
+type version = string option
 
-module type View = sig
+module type CONFIG = sig
   val render : app:string -> head:string -> string
+  val version : unit -> version
 end
 
-module type Inertia = sig
-  val render
-    :  component:string
-    -> props:props
-    -> Dream.request
-    -> Dream.response Lwt.t
+module type INERTIA = sig
+  val render : component:string -> props:props -> Dream.request -> Dream.response Lwt.t
 end
 
-module Make (V : View) : Inertia = struct
-  type partial =
-    { data_keys : string list
+module Page_object = struct
+  type t =
+    { component : string
+    ; props : props
+    ; url : string
+    ; version : version
+    }
+
+  let is_version_stale t request =
+    match Dream.header request "X-Inertia-Version", t.version with
+    | Some rv, Some pv -> rv <> pv
+    | Some _, None -> false
+    | None, Some _ -> true
+    | None, None -> false
+  ;;
+
+  let partial_reload ~component ~requested_keys t =
+    match component with
+    | ca when ca = t.component ->
+      let props =
+        match t.props with
+        | `Assoc current_props ->
+          let filtered_props =
+            List.filter (fun (k, _) -> List.mem k requested_keys) current_props
+          in
+          `Assoc filtered_props
+        | _ -> t.props
+      in
+      { t with props }
+    | _ -> t
+  ;;
+
+  let to_json { component; props; url; version } =
+    let v = version |> Option.map (fun v -> `String v) |> Option.value ~default:`Null in
+    `Assoc
+      [ "component", `String component; "props", props; "url", `String url; "version", v ]
+  ;;
+
+  let to_string t =
+    let y = to_json t in
+    Yojson.Safe.to_string y
+  ;;
+end
+
+module Make (C : CONFIG) : INERTIA = struct
+  type partial_reload_data =
+    { requested_keys : string list
     ; component : string
     }
 
   and kind =
     | Initial
     | Inertia
-    | Partial of partial
+    | Partial of partial_reload_data
 
   let get_data_keys data_keys =
     String.split_on_char ',' data_keys
@@ -32,51 +74,40 @@ module Make (V : View) : Inertia = struct
   ;;
 
   let request_kind request =
-    let i = Dream.header request "X-Inertia" in
-    let d = Dream.header request "X-Inertia-Partial-Data" in
-    let c = Dream.header request "X-Inertia-Partial-Component" in
-    match i, d, c with
-    | Some "true", Some dk, Some component ->
-      let data_keys = get_data_keys dk in
-      Partial { data_keys; component }
+    let h = Dream.header request in
+    match h "X-Inertia", h "X-Inertia-Partial-Data", h "X-Inertia-Partial-Component" with
+    | Some "true", Some keys, Some component ->
+      let requested_keys = get_data_keys keys in
+      Partial { requested_keys; component }
     | Some "true", _, _ -> Inertia
     | _, _, _ -> Initial
   ;;
 
-  let handle_partial_reload partial component props =
-    match partial with
-    | p when p.component = component ->
-      (match props with
-       | `Assoc current_props ->
-         let filtered_props =
-           List.filter (fun (k, _) -> List.mem k p.data_keys) current_props
-         in
-         `Assoc filtered_props
-       | _ -> props)
-    | _ -> props
+  let conflict url =
+    let headers = [ "X-Inertia-Location", url ] in
+    Dream.respond ~status:`Conflict ~headers ""
   ;;
 
-  let render ~component ~props request =
-    let page_object =
-      `Assoc
-        [ "component", `String component
-        ; "props", props
-        ; "url", `String (Dream.target request)
-        ; "version", `String "1"
-        ]
-    in
+  let respond po request =
     let headers = [ "Vary", "Inertia"; "X-Inertia", "true" ] in
     match request_kind request with
     | Initial ->
-      let app =
-        Yojson.Safe.to_string page_object
-        |> Fmt.str {html|<div id="app" data-page='%s'></div> |html}
-      in
+      let resp = Page_object.to_string po in
+      let app = Fmt.str {html|<div id="app" data-page='%s'></div> |html} resp in
       let head = "<!-- inertia head -->" in
-      Dream.respond @@ V.render ~app ~head
-    | Inertia -> Dream.json ~headers @@ Yojson.Safe.to_string page_object
-    | Partial p ->
-      let _ = handle_partial_reload p component props in
-      Dream.json ~headers @@ Yojson.Safe.to_string page_object
+      Dream.respond @@ C.render ~app ~head
+    | Inertia -> Dream.json ~headers @@ Page_object.to_string po
+    | Partial { component; requested_keys } ->
+      let po = Page_object.partial_reload po ~component ~requested_keys in
+      Dream.json ~headers @@ Page_object.to_string po
+  ;;
+
+  let render ~component ~props request =
+    let po =
+      Page_object.{ component; props; url = Dream.target request; version = C.version () }
+    in
+    match Page_object.is_version_stale po request, Dream.method_ request with
+    | true, `GET -> conflict po.url
+    | _, _ -> respond po request
   ;;
 end

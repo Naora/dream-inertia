@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 
-// https://vite.dev/config/
 export default defineConfig({
   server: {
     cors: {
@@ -9,7 +8,7 @@ export default defineConfig({
     },
   },
   build: {
-    manifeste: true,
+    manifest: true,
     rollupOptions: {
       input: "/views/main.js",
     },
