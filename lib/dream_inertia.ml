@@ -60,10 +60,10 @@ module Make (C : CONFIG) : INERTIA = struct
     ; component : string
     }
 
-  and kind =
-    | Initial
-    | Inertia
-    | Partial of partial_reload_data
+  and request_kind =
+    | Initial_load
+    | Inertia_request
+    | Intertia_partial_request of partial_reload_data
 
   let get_data_keys data_keys =
     String.split_on_char ',' data_keys
@@ -78,26 +78,26 @@ module Make (C : CONFIG) : INERTIA = struct
     match h "X-Inertia", h "X-Inertia-Partial-Data", h "X-Inertia-Partial-Component" with
     | Some "true", Some keys, Some component ->
       let requested_keys = get_data_keys keys in
-      Partial { requested_keys; component }
-    | Some "true", _, _ -> Inertia
-    | _, _, _ -> Initial
+      Intertia_partial_request { requested_keys; component }
+    | Some "true", _, _ -> Inertia_request
+    | _, _, _ -> Initial_load
   ;;
 
-  let conflict url =
+  let respond_conflict url =
     let headers = [ "X-Inertia-Location", url ] in
     Dream.respond ~status:`Conflict ~headers ""
   ;;
 
   let respond po request =
-    let headers = [ "Vary", "Inertia"; "X-Inertia", "true" ] in
+    let headers = [ "Vary", "X-Inertia"; "X-Inertia", "true" ] in
     match request_kind request with
-    | Initial ->
+    | Initial_load ->
       let resp = Page_object.to_string po in
       let app = Fmt.str {html|<div id="app" data-page='%s'></div> |html} resp in
       let head = "<!-- inertia head -->" in
       Dream.respond @@ C.render ~app ~head
-    | Inertia -> Dream.json ~headers @@ Page_object.to_string po
-    | Partial { component; requested_keys } ->
+    | Inertia_request -> Dream.json ~headers @@ Page_object.to_string po
+    | Intertia_partial_request { component; requested_keys } ->
       let po = Page_object.partial_reload po ~component ~requested_keys in
       Dream.json ~headers @@ Page_object.to_string po
   ;;
@@ -107,7 +107,7 @@ module Make (C : CONFIG) : INERTIA = struct
       Page_object.{ component; props; url = Dream.target request; version = C.version () }
     in
     match Page_object.is_version_stale po request, Dream.method_ request with
-    | true, `GET -> conflict po.url
+    | true, `GET -> respond_conflict po.url
     | _, _ -> respond po request
   ;;
 end
