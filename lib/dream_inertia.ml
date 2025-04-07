@@ -2,7 +2,7 @@ type props = Yojson.Safe.t
 type version = string option
 
 module type CONFIG = sig
-  val render : app:string -> head:string -> string
+  val render : head:string -> app:string -> string
   val version : unit -> version
 end
 
@@ -24,7 +24,7 @@ module Page_object = struct
     | _, _ -> false
   ;;
 
-  let partial_reload ~component ~requested_keys t =
+  let partial_reload t ~component ~requested_keys =
     match component with
     | ca when ca = t.component ->
       let props =
@@ -52,7 +52,7 @@ module Page_object = struct
   ;;
 end
 
-module Make (C : CONFIG) : INERTIA = struct
+module Make (Config : CONFIG) : INERTIA = struct
   type partial_reload_data =
     { requested_keys : string list
     ; component : string
@@ -93,7 +93,7 @@ module Make (C : CONFIG) : INERTIA = struct
       let resp = Page_object.to_string po in
       let app = Fmt.str {html|<div id="app" data-page='%s'></div> |html} resp in
       let head = "<!-- inertia head -->" in
-      Dream.respond @@ C.render ~app ~head
+      Dream.respond @@ Config.render ~app ~head
     | Inertia_request -> Dream.json ~headers @@ Page_object.to_string po
     | Intertia_partial_request { component; requested_keys } ->
       let po = Page_object.partial_reload po ~component ~requested_keys in
@@ -102,7 +102,8 @@ module Make (C : CONFIG) : INERTIA = struct
 
   let render ~component ~props request =
     let po =
-      Page_object.{ component; props; url = Dream.target request; version = C.version () }
+      Page_object.
+        { component; props; url = Dream.target request; version = Config.version () }
     in
     match Page_object.is_version_stale po request, Dream.method_ request with
     | true, `GET -> respond_conflict po.url

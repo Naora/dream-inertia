@@ -1,0 +1,41 @@
+test: test initial load
+--- request ---
+GET: /
+[Accept: text/html, application/xhtml+xml]
+
+--- response ---
+200 OK
+[]
+
+<html><head><!-- inertia head --></head><body><div id="app" data-page='{"component":"Test","props":{},"url":"/","version":null}'></div> </body></html>
+
+
+test: test inertia load
+--- request ---
+GET: /
+[Accept: text/html, application/xhtml+xml
+ X-Inertia: true]
+
+--- response ---
+200 OK
+[Vary: X-Inertia
+ X-Inertia: true
+ Content-Type: application/json]
+
+{"component":"Test","props":{},"url":"/","version":null}
+
+
+test: test inertia with stale version. Server has version "0"
+--- request ---
+GET: /
+[Accept: text/html, application/xhtml+xml
+ X-Inertia: true
+ X-Inertia-Version: 1]
+
+--- response ---
+409 Conflict
+[X-Inertia-Location: /]
+
+
+
+
