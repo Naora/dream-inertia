@@ -34,7 +34,18 @@ struct
   ;;
 
   let handler request = Inertia.render ~component:"Test" ~props:(`Assoc []) request
-  let routes = describe_middleware @@ Dream.router [ Dream.get "/" handler ]
+  let redirect_handler request = Dream.redirect request "/"
+
+  let routes =
+    describe_middleware
+    @@ Dream.router
+         [ Dream.get "/" handler
+         ; Dream.post "/" redirect_handler
+         ; Dream.put "/" redirect_handler
+         ; Dream.patch "/" redirect_handler
+         ; Dream.delete "/" redirect_handler
+         ]
+  ;;
 end
 
 let inertia_header ?(accept = "text/html, application/xhtml+xml") ?version ?inertia () =
@@ -70,5 +81,13 @@ let () =
   test
     "test inertia with stale version. Server has version \"0\""
     WithVersionServer.routes
-    (Dream.request ~headers:(inertia_header ~inertia:true ~version:"1" ()) "")
+    (Dream.request ~headers:(inertia_header ~inertia:true ~version:"1" ()) "");
+  [ `POST; `PATCH; `PUT; `DELETE ]
+  |> List.iter (fun method_ ->
+    test
+      (Fmt.str
+         "test inertia with stale version and a %s method. Server has version \"0\""
+         (Dream.method_to_string method_))
+      WithVersionServer.routes
+      (Dream.request ~method_ ~headers:(inertia_header ~inertia:true ~version:"1" ()) ""))
 ;;

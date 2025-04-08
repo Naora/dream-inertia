@@ -39,3 +39,59 @@ GET: /
 
 
 
+test: test inertia with stale version and a POST method. Server has version "0"
+--- request ---
+POST: /
+[Accept: text/html, application/xhtml+xml
+ X-Inertia: true
+ X-Inertia-Version: 1]
+
+--- response ---
+303 See Other
+[Location: /]
+
+
+
+
+test: test inertia with stale version and a PATCH method. Server has version "0"
+--- request ---
+PATCH: /
+[Accept: text/html, application/xhtml+xml
+ X-Inertia: true
+ X-Inertia-Version: 1]
+
+--- response ---
+303 See Other
+[Location: /]
+
+
+
+
+test: test inertia with stale version and a PUT method. Server has version "0"
+--- request ---
+PUT: /
+[Accept: text/html, application/xhtml+xml
+ X-Inertia: true
+ X-Inertia-Version: 1]
+
+--- response ---
+303 See Other
+[Location: /]
+
+
+
+
+test: test inertia with stale version and a DELETE method. Server has version "0"
+--- request ---
+DELETE: /
+[Accept: text/html, application/xhtml+xml
+ X-Inertia: true
+ X-Inertia-Version: 1]
+
+--- response ---
+303 See Other
+[Location: /]
+
+
+
+
