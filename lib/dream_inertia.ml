@@ -1,8 +1,14 @@
 open Lwt.Syntax
 
 type prop =
-  | Load of string * (unit -> Yojson.Safe.t Lwt.t)
-  | Defer of string * (unit -> Yojson.Safe.t Lwt.t)
+  { name : string
+  ; resolver : unit -> Yojson.Safe.t Lwt.t
+  }
+
+type deferred =
+  { prop : prop
+  ; group : string
+  }
 
 type version = string option
 
@@ -15,6 +21,7 @@ module type INERTIA = sig
   val render
     :  component:string
     -> props:prop list
+    -> deferred:deferred list
     -> Dream.request
     -> Dream.response Lwt.t
 end
@@ -23,6 +30,7 @@ module Page_object = struct
   type t =
     { component : string
     ; props : prop list
+    ; deferred : deferred list
     ; url : string
     ; version : version
     }
@@ -37,47 +45,63 @@ module Page_object = struct
     | _, _ -> false
   ;;
 
-  (* Il doit y avoir une meilleur facon de faire. Je pense a mettre qu'un filter_map... *)
-  let props_to_json props keys =
+  let props_to_json t keys =
     let* props =
       match keys with
       | All ->
-        let resolved =
-          Lwt_list.filter_map_p
-            (function
-              | Load (k, f) ->
-                let* v = f () in
-                Lwt.return_some (k, v)
-              | Defer _ -> Lwt.return_none)
-            props
-        in
-        resolved
+        Lwt_list.map_p
+          (fun { name; resolver } ->
+            let* v = resolver () in
+            Lwt.return (name, v))
+          t.props
       | Partial keys ->
-        let resolved =
-          Lwt_list.filter_map_p
-            (function
-              | Load (k, f) | Defer (k, f) ->
-                if List.exists (fun l -> l = k) keys
-                then
-                  let* v = f () in
-                  Lwt.return_some (k, v)
-                else Lwt.return_none)
-            props
-        in
-        resolved
+        let deferred_prop = List.map (fun d -> d.prop) t.deferred in
+        let all_props = List.append t.props deferred_prop in
+        Lwt_list.filter_map_p
+          (fun { name; resolver } ->
+            if List.exists (fun l -> l = name) keys
+            then
+              let* v = resolver () in
+              Lwt.return_some (name, v)
+            else Lwt.return_none)
+          all_props
     in
     Lwt.return (`Assoc props)
   ;;
 
+  let deferred_props_by_group t =
+    let groups = Hashtbl.create @@ List.length t.deferred in
+    List.iter
+      (fun { prop = { name; _ }; group } ->
+        match Hashtbl.find_opt groups group with
+        | None -> Hashtbl.add groups group [ name ]
+        | Some g -> Hashtbl.replace groups group (name :: g))
+      t.deferred;
+    let g =
+      Hashtbl.fold
+        (fun name props acc ->
+          let p = List.map (fun p -> `String p) props in
+          (name, `List p) :: acc)
+        groups
+        []
+    in
+    `Assoc g
+  ;;
+
   let to_json t keys =
     let v = t.version |> Option.map (fun v -> `String v) |> Option.value ~default:`Null in
-    let* props = props_to_json t.props keys in
+    let* props = props_to_json t keys in
+    let deferred_props =
+      match keys with
+      | All -> deferred_props_by_group t
+      | Partial _ -> `Null
+    in
     Lwt.return
       (`Assoc
         [ "component", `String t.component
         ; "props", props
         ; "url", `String t.url
-        ; "deferredProps", `Assoc [ "default", `List [ `String "permissions" ] ]
+        ; "deferredProps", deferred_props
         ; "version", v
         ])
   ;;
@@ -145,10 +169,15 @@ module Make (Config : CONFIG) : INERTIA = struct
       else respond_with_json po (Partial requested_keys)
   ;;
 
-  let render ~component ~props request =
+  let render ~component ~props ~deferred request =
     let po =
       Page_object.
-        { component; props; url = Dream.target request; version = Config.version () }
+        { component
+        ; props
+        ; deferred
+        ; url = Dream.target request
+        ; version = Config.version ()
+        }
     in
     match Page_object.is_version_stale po request, Dream.method_ request with
     | true, `GET -> respond_with_conflict po.url
