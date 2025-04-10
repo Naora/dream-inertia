@@ -1,4 +1,9 @@
-type props = Yojson.Safe.t
+open Lwt.Syntax
+
+type prop =
+  | Load of string * (unit -> Yojson.Safe.t Lwt.t)
+  | Defer of string * (unit -> Yojson.Safe.t Lwt.t)
+
 type version = string option
 
 module type CONFIG = sig
@@ -7,16 +12,24 @@ module type CONFIG = sig
 end
 
 module type INERTIA = sig
-  val render : component:string -> props:props -> Dream.request -> Dream.response Lwt.t
+  val render
+    :  component:string
+    -> props:prop list
+    -> Dream.request
+    -> Dream.response Lwt.t
 end
 
 module Page_object = struct
   type t =
     { component : string
-    ; props : props
+    ; props : prop list
     ; url : string
     ; version : version
     }
+
+  type requested_keys =
+    | All
+    | Partial of string list
 
   let is_version_stale t request =
     match Dream.header request "X-Inertia-Version", t.version with
@@ -24,31 +37,54 @@ module Page_object = struct
     | _, _ -> false
   ;;
 
-  let partial_reload t ~component ~requested_keys =
-    match component with
-    | ca when ca = t.component ->
-      let props =
-        match t.props with
-        | `Assoc current_props ->
-          let filtered_props =
-            List.filter (fun (k, _) -> List.mem k requested_keys) current_props
-          in
-          `Assoc filtered_props
-        | _ -> t.props
-      in
-      { t with props }
-    | _ -> t
+  (* Il doit y avoir une meilleur facon de faire. Je pense a mettre qu'un filter_map... *)
+  let props_to_json props keys =
+    let* props =
+      match keys with
+      | All ->
+        let resolved =
+          Lwt_list.filter_map_p
+            (function
+              | Load (k, f) ->
+                let* v = f () in
+                Lwt.return_some (k, v)
+              | Defer _ -> Lwt.return_none)
+            props
+        in
+        resolved
+      | Partial keys ->
+        let resolved =
+          Lwt_list.filter_map_p
+            (function
+              | Load (k, f) | Defer (k, f) ->
+                if List.exists (fun l -> l = k) keys
+                then
+                  let* v = f () in
+                  Lwt.return_some (k, v)
+                else Lwt.return_none)
+            props
+        in
+        resolved
+    in
+    Lwt.return (`Assoc props)
   ;;
 
-  let to_json { component; props; url; version } =
-    let v = version |> Option.map (fun v -> `String v) |> Option.value ~default:`Null in
-    `Assoc
-      [ "component", `String component; "props", props; "url", `String url; "version", v ]
+  let to_json t keys =
+    let v = t.version |> Option.map (fun v -> `String v) |> Option.value ~default:`Null in
+    let* props = props_to_json t.props keys in
+    Lwt.return
+      (`Assoc
+        [ "component", `String t.component
+        ; "props", props
+        ; "url", `String t.url
+        ; "deferredProps", `Assoc [ "default", `List [ `String "permissions" ] ]
+        ; "version", v
+        ])
   ;;
 
-  let to_string t =
-    let y = to_json t in
-    Yojson.Safe.to_string y
+  let to_string t keys =
+    let* y = to_json t keys in
+    Lwt.return (Yojson.Safe.to_string y)
   ;;
 end
 
@@ -81,23 +117,32 @@ module Make (Config : CONFIG) : INERTIA = struct
     | _, _, _ -> Initial_load
   ;;
 
-  let respond_conflict url =
+  let respond_with_conflict url =
     let headers = [ "X-Inertia-Location", url ] in
     Dream.respond ~status:`Conflict ~headers ""
   ;;
 
-  let respond po request =
+  let respond_with_json po keys =
     let headers = [ "Vary", "X-Inertia"; "X-Inertia", "true" ] in
+    let* json = Page_object.to_string po keys in
+    Dream.json ~headers json
+  ;;
+
+  let respond_with_html po =
+    let* resp = Page_object.to_string po All in
+    let app = Fmt.str {html|<div id="app" data-page='%s'></div> |html} resp in
+    let head = "<!-- inertia head -->" in
+    Dream.respond @@ Config.render ~app ~head
+  ;;
+
+  let respond po request =
     match request_kind request with
-    | Initial_load ->
-      let resp = Page_object.to_string po in
-      let app = Fmt.str {html|<div id="app" data-page='%s'></div> |html} resp in
-      let head = "<!-- inertia head -->" in
-      Dream.respond @@ Config.render ~app ~head
-    | Inertia_request -> Dream.json ~headers @@ Page_object.to_string po
+    | Initial_load -> respond_with_html po
+    | Inertia_request -> respond_with_json po All
     | Intertia_partial_request { component; requested_keys } ->
-      let po = Page_object.partial_reload po ~component ~requested_keys in
-      Dream.json ~headers @@ Page_object.to_string po
+      if component <> po.component
+      then respond_with_html po
+      else respond_with_json po (Partial requested_keys)
   ;;
 
   let render ~component ~props request =
@@ -106,7 +151,7 @@ module Make (Config : CONFIG) : INERTIA = struct
         { component; props; url = Dream.target request; version = Config.version () }
     in
     match Page_object.is_version_stale po request, Dream.method_ request with
-    | true, `GET -> respond_conflict po.url
+    | true, `GET -> respond_with_conflict po.url
     | _, _ -> respond po request
   ;;
 end

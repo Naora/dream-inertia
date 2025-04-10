@@ -33,7 +33,7 @@ struct
     Lwt.return response
   ;;
 
-  let handler request = Inertia.render ~component:"Test" ~props:(`Assoc []) request
+  let handler request = Inertia.render ~component:"Test" ~props:[] request
   let redirect_handler request = Dream.redirect request "/"
 
   let routes =
