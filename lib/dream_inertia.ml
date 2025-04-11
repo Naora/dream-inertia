@@ -118,7 +118,7 @@ module Make (Config : CONFIG) : INERTIA = struct
     ; component : string
     }
 
-  and request_kind =
+  type request_kind =
     | Initial_load
     | Inertia_request
     | Intertia_partial_request of partial_reload_data
