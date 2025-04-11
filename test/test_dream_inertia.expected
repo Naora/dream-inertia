@@ -7,7 +7,7 @@ GET: /
 200 OK
 []
 
-<html><head><!-- inertia head --></head><body><div id="app" data-page='{"component":"Test","props":{},"url":"/","version":null}'></div> </body></html>
+<html><head><!-- inertia head --></head><body><div id="app" data-page='{"deferredProps":{},"component":"Test","props":{},"url":"/","version":null}'></div> </body></html>
 
 
 test: test inertia load
@@ -22,7 +22,7 @@ GET: /
  X-Inertia: true
  Content-Type: application/json]
 
-{"component":"Test","props":{},"url":"/","version":null}
+{"deferredProps":{},"component":"Test","props":{},"url":"/","version":null}
 
 
 test: test inertia with stale version. Server has version "0"

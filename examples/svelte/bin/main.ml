@@ -10,20 +10,10 @@ type event =
 
 type permission = { kind : string } [@@deriving yojson]
 
-(* TODO: ajouter ces methods d'aide dans la lib *)
-let get path ~component ~props ~deferred =
-  Dream.get path (fun request -> App.Inertia.render request ~component ~props ~deferred)
-;;
-
-let prop name resolver = Dream_inertia.{ name; resolver }
-
-let deferred name ?(group = "default") resolver =
-  Dream_inertia.{ prop = { name; resolver }; group }
-;;
-
-let home_handler =
-  get
-    "/"
+let home_handler request =
+  let open App.Inertia in
+  render
+    request
     ~component:"Home"
     ~props:
       [ prop "event" (fun () ->
@@ -43,5 +33,13 @@ let home_handler =
       ]
 ;;
 
-let about_handler = get "/about" ~component:"About" ~props:[] ~deferred:[]
-let () = Dream.run @@ Dream.logger @@ Dream.router [ home_handler; about_handler ]
+let about_handler request =
+  let open App.Inertia in
+  render request ~component:"About"
+;;
+
+let () =
+  Dream.run
+  @@ Dream.logger
+  @@ Dream.router [ Dream.get "/" home_handler; Dream.get "/about" about_handler ]
+;;

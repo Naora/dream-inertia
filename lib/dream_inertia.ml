@@ -20,10 +20,13 @@ end
 module type INERTIA = sig
   val render
     :  component:string
-    -> props:prop list
-    -> deferred:deferred list
+    -> ?props:prop list
+    -> ?deferred:deferred list
     -> Dream.request
     -> Dream.response Lwt.t
+
+  val prop : string -> (unit -> Yojson.Safe.t Lwt.t) -> prop
+  val deferred : string -> ?group:string -> (unit -> Yojson.Safe.t Lwt.t) -> deferred
 end
 
 module Page_object = struct
@@ -91,19 +94,21 @@ module Page_object = struct
   let to_json t keys =
     let v = t.version |> Option.map (fun v -> `String v) |> Option.value ~default:`Null in
     let* props = props_to_json t keys in
-    let deferred_props =
-      match keys with
-      | All -> deferred_props_by_group t
-      | Partial _ -> `Null
+    let json =
+      [ "component", `String t.component
+      ; "props", props
+      ; "url", `String t.url
+      ; "version", v
+      ]
     in
-    Lwt.return
-      (`Assoc
-        [ "component", `String t.component
-        ; "props", props
-        ; "url", `String t.url
-        ; "deferredProps", deferred_props
-        ; "version", v
-        ])
+    let json =
+      match keys with
+      | All ->
+        let deferred_props = deferred_props_by_group t in
+        ("deferredProps", deferred_props) :: json
+      | Partial _ -> json
+    in
+    Lwt.return (`Assoc json)
   ;;
 
   let to_string t keys =
@@ -169,7 +174,7 @@ module Make (Config : CONFIG) : INERTIA = struct
       else respond_with_json po (Partial requested_keys)
   ;;
 
-  let render ~component ~props ~deferred request =
+  let render ~component ?(props = []) ?(deferred = []) request =
     let po =
       Page_object.
         { component
@@ -183,4 +188,7 @@ module Make (Config : CONFIG) : INERTIA = struct
     | true, `GET -> respond_with_conflict po.url
     | _, _ -> respond po request
   ;;
+
+  let prop name resolver = { name; resolver }
+  let deferred name ?(group = "default") resolver = { prop = { name; resolver }; group }
 end
