@@ -2,8 +2,8 @@
 Inertia protocol for OCaml Dream 
 
 TODO : 
-- [ ] shared data
-- [ ] redirects must be handled on a middleware
+- [x] shared data
+- [x] location method added 
      - Adding the X-Inertia-Location 
 - [ ] Merged props
      - MergeProps is a property, which items will be merged instead of overwrite.

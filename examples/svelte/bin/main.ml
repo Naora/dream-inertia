@@ -44,7 +44,7 @@ let home_handler request =
           |> Lwt.return)
       ]
     ~deferred:
-      [ deferred "permissions" (fun () ->
+      [ defer "permissions" (fun () ->
           let open Lwt.Syntax in
           let* _ = Lwt_unix.sleep 3. in
           Lwt.return ({ kind = "read" } |> yojson_of_permission))
@@ -56,9 +56,17 @@ let about_handler request =
   render request ~component:"About"
 ;;
 
+let redirect_handler request =
+  let open Inertia in
+  location request "//git.jogun.me"
+;;
+
 let () =
   Dream.run
   @@ Dream.logger
-  @@ Dream.livereload
-  @@ Dream.router [ Dream.get "/" home_handler; Dream.get "/about" about_handler ]
+  @@ Dream.router
+       [ Dream.get "/" home_handler
+       ; Dream.get "/about" about_handler
+       ; Dream.get "/redirect" redirect_handler
+       ]
 ;;

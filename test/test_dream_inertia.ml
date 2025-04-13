@@ -38,7 +38,8 @@ struct
   ;;
 
   let handler request = Inertia.render request ~component:"Test"
-  let redirect_handler request = Dream.redirect request "/"
+  let handler_redirect request = Dream.redirect request "/"
+  let handler_location request = Inertia.location request "https://www.google.com"
 
   let handler_with_shared_data request =
     Inertia.render
@@ -54,11 +55,12 @@ struct
     describe_middleware
     @@ Dream.router
          [ Dream.get "/" handler
-         ; Dream.post "/" redirect_handler
-         ; Dream.put "/" redirect_handler
-         ; Dream.patch "/" redirect_handler
-         ; Dream.delete "/" redirect_handler
+         ; Dream.post "/" handler_redirect
+         ; Dream.put "/" handler_redirect
+         ; Dream.patch "/" handler_redirect
+         ; Dream.delete "/" handler_redirect
          ; Dream.get "/shared" handler_with_shared_data
+         ; Dream.get "/location" handler_location
          ]
   ;;
 end
@@ -108,5 +110,13 @@ let () =
   test
     "test with shared data collisions"
     NoVersionServer.routes
-    (Dream.request ~target:"/shared" ~headers:(inertia_header ~inertia:true ()) "")
+    (Dream.request ~target:"/shared" ~headers:(inertia_header ~inertia:true ()) "");
+  test
+    "test location with inertia request"
+    NoVersionServer.routes
+    (Dream.request ~target:"/location" ~headers:(inertia_header ~inertia:true ()) "");
+  test
+    "test location is initial load"
+    NoVersionServer.routes
+    (Dream.request ~target:"/location" "")
 ;;

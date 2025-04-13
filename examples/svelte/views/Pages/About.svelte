@@ -5,3 +5,4 @@
 
 <h1>Hello About page!</h1>
 <Link href="/">Home page</Link>
+<Link href="/redirect"> redirect </Link>

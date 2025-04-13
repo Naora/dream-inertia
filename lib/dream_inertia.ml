@@ -25,6 +25,8 @@ module type INERTIA = sig
     -> ?deferred:deferred list
     -> Dream.request
     -> Dream.response Lwt.t
+
+  val location : Dream.request -> string -> Dream.response Lwt.t
 end
 
 module Page_object = struct
@@ -205,7 +207,13 @@ module Make (Config : CONFIG) : INERTIA = struct
     | true, `GET -> respond_with_conflict po.url
     | _, _ -> respond po request
   ;;
+
+  let location request target =
+    match request_kind request with
+    | Initial_load -> Dream.redirect request target
+    | _ -> Dream.respond ~status:`Conflict ~headers:[ "X-Inertia-Location", target ] ""
+  ;;
 end
 
 let prop name resolver = { name; resolver }
-let deferred name ?(group = "default") resolver = { prop = { name; resolver }; group }
+let defer name ?(group = "default") resolver = { prop = { name; resolver }; group }
