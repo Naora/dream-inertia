@@ -5,9 +5,9 @@ GET: /
 
 --- response ---
 200 OK
-[]
+[Content-Type: text/html; charset=utf-8]
 
-<html><head><!-- inertia head --></head><body><div id="app" data-page='{"deferredProps":{},"component":"Test","props":{},"url":"/","version":null}'></div> </body></html>
+<html><head><!-- inertia head --></head><body><div id="app" data-page='{"deferredProps":{},"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null}'></div> </body></html>
 
 
 test: test inertia load
@@ -22,7 +22,7 @@ GET: /
  X-Inertia: true
  Content-Type: application/json]
 
-{"deferredProps":{},"component":"Test","props":{},"url":"/","version":null}
+{"deferredProps":{},"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null}
 
 
 test: test inertia with stale version. Server has version "0"
@@ -93,5 +93,20 @@ DELETE: /
 [Location: /]
 
 
+
+
+test: test with shared data collisions
+--- request ---
+GET: /shared
+[Accept: text/html, application/xhtml+xml
+ X-Inertia: true]
+
+--- response ---
+200 OK
+[Vary: X-Inertia
+ X-Inertia: true
+ Content-Type: application/json]
+
+{"deferredProps":{},"component":"Test","props":{"shared_test":"overriden shared data"},"url":"/shared","version":null}
 
 

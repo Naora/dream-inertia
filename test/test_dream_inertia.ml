@@ -8,6 +8,10 @@ struct
       ;;
 
       let version () = V.version
+
+      let shared _ =
+        Some [ Dream_inertia.prop "shared_test" (fun () -> Lwt.return (`String "hello")) ]
+      ;;
     end)
 
   let describe_middleware handler request =
@@ -33,8 +37,18 @@ struct
     Lwt.return response
   ;;
 
-  let handler request = Inertia.render ~component:"Test" ~props:[] ~deferred:[] request
+  let handler request = Inertia.render request ~component:"Test"
   let redirect_handler request = Dream.redirect request "/"
+
+  let handler_with_shared_data request =
+    Inertia.render
+      request
+      ~component:"Test"
+      ~props:
+        [ Dream_inertia.prop "shared_test" (fun () ->
+            Lwt.return (`String "overriden shared data"))
+        ]
+  ;;
 
   let routes =
     describe_middleware
@@ -44,6 +58,7 @@ struct
          ; Dream.put "/" redirect_handler
          ; Dream.patch "/" redirect_handler
          ; Dream.delete "/" redirect_handler
+         ; Dream.get "/shared" handler_with_shared_data
          ]
   ;;
 end
@@ -89,5 +104,9 @@ let () =
          "test inertia with stale version and a %s method. Server has version \"0\""
          (Dream.method_to_string method_))
       WithVersionServer.routes
-      (Dream.request ~method_ ~headers:(inertia_header ~inertia:true ~version:"1" ()) ""))
+      (Dream.request ~method_ ~headers:(inertia_header ~inertia:true ~version:"1" ()) ""));
+  test
+    "test with shared data collisions"
+    NoVersionServer.routes
+    (Dream.request ~target:"/shared" ~headers:(inertia_header ~inertia:true ()) "")
 ;;

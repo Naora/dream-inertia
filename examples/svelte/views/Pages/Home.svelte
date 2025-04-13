@@ -1,10 +1,10 @@
 <script>
 	import { Link, Deferred } from "@inertiajs/svelte";
 	
-	let { permissions } = $props()
+	let { permissions, user } = $props()
 </script>
 
-<h1>Hello Home page!</h1>
+<h1>Hello Home {user}!</h1>
 <Link href="/about">About page</Link>
 <Deferred data="permissions">
   {#snippet fallback()}

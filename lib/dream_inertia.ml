@@ -15,6 +15,7 @@ type version = string option
 module type CONFIG = sig
   val render : head:string -> app:string -> string
   val version : unit -> version
+  val shared : Dream.request -> prop list option
 end
 
 module type INERTIA = sig
@@ -24,14 +25,12 @@ module type INERTIA = sig
     -> ?deferred:deferred list
     -> Dream.request
     -> Dream.response Lwt.t
-
-  val prop : string -> (unit -> Yojson.Safe.t Lwt.t) -> prop
-  val deferred : string -> ?group:string -> (unit -> Yojson.Safe.t Lwt.t) -> deferred
 end
 
 module Page_object = struct
   type t =
     { component : string
+    ; shared : prop list option
     ; props : prop list
     ; deferred : deferred list
     ; url : string
@@ -48,26 +47,43 @@ module Page_object = struct
     | _, _ -> false
   ;;
 
+  let all_props t =
+    Lwt_list.map_p
+      (fun { name; resolver } ->
+        let* v = resolver () in
+        Lwt.return (name, v))
+      t.props
+  ;;
+
+  let find_props_by_key t keys =
+    let deferred_prop = List.map (fun d -> d.prop) t.deferred in
+    let all_props = List.append t.props deferred_prop in
+    Lwt_list.filter_map_p
+      (fun { name; resolver } ->
+        if List.exists (fun l -> l = name) keys
+        then
+          let* v = resolver () in
+          Lwt.return_some (name, v)
+        else Lwt.return_none)
+      all_props
+  ;;
+
+  let merge_shared_props t =
+    match t.shared with
+    | Some s ->
+      let props =
+        List.sort_uniq (fun a b -> String.compare a.name b.name) (t.props @ s)
+      in
+      { t with props }
+    | None -> t
+  ;;
+
   let props_to_json t keys =
+    let t = merge_shared_props t in
     let* props =
       match keys with
-      | All ->
-        Lwt_list.map_p
-          (fun { name; resolver } ->
-            let* v = resolver () in
-            Lwt.return (name, v))
-          t.props
-      | Partial keys ->
-        let deferred_prop = List.map (fun d -> d.prop) t.deferred in
-        let all_props = List.append t.props deferred_prop in
-        Lwt_list.filter_map_p
-          (fun { name; resolver } ->
-            if List.exists (fun l -> l = name) keys
-            then
-              let* v = resolver () in
-              Lwt.return_some (name, v)
-            else Lwt.return_none)
-          all_props
+      | All -> all_props t
+      | Partial keys -> find_props_by_key t keys
     in
     Lwt.return (`Assoc props)
   ;;
@@ -161,7 +177,7 @@ module Make (Config : CONFIG) : INERTIA = struct
     let* resp = Page_object.to_string po All in
     let app = Fmt.str {html|<div id="app" data-page='%s'></div> |html} resp in
     let head = "<!-- inertia head -->" in
-    Dream.respond @@ Config.render ~app ~head
+    Dream.html @@ Config.render ~app ~head
   ;;
 
   let respond po request =
@@ -178,6 +194,7 @@ module Make (Config : CONFIG) : INERTIA = struct
     let po =
       Page_object.
         { component
+        ; shared = Config.shared request
         ; props
         ; deferred
         ; url = Dream.target request
@@ -188,7 +205,7 @@ module Make (Config : CONFIG) : INERTIA = struct
     | true, `GET -> respond_with_conflict po.url
     | _, _ -> respond po request
   ;;
-
-  let prop name resolver = { name; resolver }
-  let deferred name ?(group = "default") resolver = { prop = { name; resolver }; group }
 end
+
+let prop name resolver = { name; resolver }
+let deferred name ?(group = "default") resolver = { prop = { name; resolver }; group }

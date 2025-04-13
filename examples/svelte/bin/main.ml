@@ -8,10 +8,20 @@ type event =
   }
 [@@deriving yojson]
 
+module Inertia = Dream_inertia.Make (struct
+    let render ~head ~app = Index.render head app
+    let version () = Some "3"
+
+    let shared _ =
+      Some [ Dream_inertia.prop "user" (fun () -> Lwt.return (`String "Felicita")) ]
+    ;;
+  end)
+
 type permission = { kind : string } [@@deriving yojson]
 
 let home_handler request =
-  let open App.Inertia in
+  let open Dream_inertia in
+  let open Inertia in
   render
     request
     ~component:"Home"
@@ -20,6 +30,14 @@ let home_handler request =
           { id = "123456"
           ; title = "title"
           ; start_date = "26/03/24"
+          ; description = "the day where all began"
+          }
+          |> yojson_of_event
+          |> Lwt.return)
+      ; prop "birthday" (fun () ->
+          { id = "123"
+          ; title = "Johanna"
+          ; start_date = "26/03/1985"
           ; description = "the day where all began"
           }
           |> yojson_of_event
@@ -34,12 +52,13 @@ let home_handler request =
 ;;
 
 let about_handler request =
-  let open App.Inertia in
+  let open Inertia in
   render request ~component:"About"
 ;;
 
 let () =
   Dream.run
   @@ Dream.logger
+  @@ Dream.livereload
   @@ Dream.router [ Dream.get "/" home_handler; Dream.get "/about" about_handler ]
 ;;
