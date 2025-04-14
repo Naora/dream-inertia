@@ -110,3 +110,28 @@ GET: /shared
 {"deferredProps":{},"component":"Test","props":{"shared_test":"overriden shared data"},"url":"/shared","version":null}
 
 
+test: test location with inertia request
+--- request ---
+GET: /location
+[Accept: text/html, application/xhtml+xml
+ X-Inertia: true]
+
+--- response ---
+409 Conflict
+[X-Inertia-Location: https://www.google.com]
+
+
+
+
+test: test location is initial load
+--- request ---
+GET: /location
+[]
+
+--- response ---
+303 See Other
+[Location: https://www.google.com]
+
+
+
+
