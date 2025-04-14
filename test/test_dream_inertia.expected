@@ -7,7 +7,7 @@ GET: /
 200 OK
 [Content-Type: text/html; charset=utf-8]
 
-<html><head><!-- inertia head --></head><body><div id="app" data-page='{"deferredProps":{},"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null}'></div> </body></html>
+<html><head><!-- inertia head --></head><body><div id="app" data-page='{"deferredProps":{},"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null,"mergeProps":[]}'></div> </body></html>
 
 
 test: test inertia load
@@ -22,7 +22,7 @@ GET: /
  X-Inertia: true
  Content-Type: application/json]
 
-{"deferredProps":{},"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null}
+{"deferredProps":{},"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null,"mergeProps":[]}
 
 
 test: test inertia with stale version. Server has version "0"
@@ -107,7 +107,7 @@ GET: /shared
  X-Inertia: true
  Content-Type: application/json]
 
-{"deferredProps":{},"component":"Test","props":{"shared_test":"overriden shared data"},"url":"/shared","version":null}
+{"deferredProps":{},"component":"Test","props":{"shared_test":"overriden shared data"},"url":"/shared","version":null,"mergeProps":[]}
 
 
 test: test location with inertia request
@@ -133,5 +133,32 @@ GET: /location
 [Location: https://www.google.com]
 
 
+
+
+test: test mergeable props
+--- request ---
+GET: /mergeable
+[]
+
+--- response ---
+200 OK
+[Content-Type: text/html; charset=utf-8]
+
+<html><head><!-- inertia head --></head><body><div id="app" data-page='{"deferredProps":{"default":["not_this_d","merge_this_d"]},"component":"Mergeable","props":{"merge_this":"merged","not_this":"ow no","shared_test":"hello"},"url":"/mergeable","version":null,"mergeProps":["merge_this","merge_this_d"]}'></div> </body></html>
+
+
+test: test mergeable props
+--- request ---
+GET: /mergeable
+[Accept: text/html, application/xhtml+xml
+ X-Inertia: true]
+
+--- response ---
+200 OK
+[Vary: X-Inertia
+ X-Inertia: true
+ Content-Type: application/json]
+
+{"deferredProps":{"default":["not_this_d","merge_this_d"]},"component":"Mergeable","props":{"merge_this":"merged","not_this":"ow no","shared_test":"hello"},"url":"/mergeable","version":null,"mergeProps":["merge_this","merge_this_d"]}
 
 

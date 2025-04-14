@@ -13,7 +13,8 @@ module Inertia = Dream_inertia.Make (struct
     let version () = Some "3"
 
     let shared _ =
-      Some [ Dream_inertia.prop "user" (fun () -> Lwt.return (`String "Felicita")) ]
+      let open Dream_inertia in
+      Some [ prop "user" (fun () -> Lwt.return (`String "Felicita")) ]
     ;;
   end)
 
@@ -34,14 +35,17 @@ let home_handler request =
           }
           |> yojson_of_event
           |> Lwt.return)
-      ; prop "birthday" (fun () ->
-          { id = "123"
-          ; title = "Johanna"
-          ; start_date = "26/03/1985"
-          ; description = "the day where all began"
-          }
-          |> yojson_of_event
-          |> Lwt.return)
+      ; prop ~merge:true "events" (fun () ->
+          let events =
+            [ { id = "123"
+              ; title = "Johannas event"
+              ; start_date = "26/03/1985"
+              ; description = "the day where all began"
+              }
+            ]
+            |> List.map yojson_of_event
+          in
+          Lwt.return (`List events))
       ]
     ~deferred:
       [ defer "permissions" (fun () ->

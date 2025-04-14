@@ -41,6 +41,21 @@ struct
   let handler_redirect request = Dream.redirect request "/"
   let handler_location request = Inertia.location request "https://www.google.com"
 
+  let handler_mergeable request =
+    let open Dream_inertia in
+    Inertia.render
+      request
+      ~component:"Mergeable"
+      ~props:
+        [ prop "merge_this" ~merge:true (fun () -> Lwt.return (`String "merged"))
+        ; prop "not_this" (fun () -> Lwt.return (`String "ow no"))
+        ]
+      ~deferred:
+        [ defer "merge_this_d" ~merge:true (fun () -> Lwt.return (`String "merged"))
+        ; defer "not_this_d" (fun () -> Lwt.return (`String "ow no"))
+        ]
+  ;;
+
   let handler_with_shared_data request =
     Inertia.render
       request
@@ -61,6 +76,7 @@ struct
          ; Dream.delete "/" handler_redirect
          ; Dream.get "/shared" handler_with_shared_data
          ; Dream.get "/location" handler_location
+         ; Dream.get "/mergeable" handler_mergeable
          ]
   ;;
 end
@@ -118,5 +134,13 @@ let () =
   test
     "test location is initial load"
     NoVersionServer.routes
-    (Dream.request ~target:"/location" "")
+    (Dream.request ~target:"/location" "");
+  test
+    "test mergeable props"
+    NoVersionServer.routes
+    (Dream.request ~target:"/mergeable" "");
+  test
+    "test mergeable props"
+    NoVersionServer.routes
+    (Dream.request ~target:"/mergeable" ~headers:(inertia_header ~inertia:true ()) "")
 ;;

@@ -3,6 +3,7 @@ open Lwt.Syntax
 type prop =
   { name : string
   ; resolver : unit -> Yojson.Safe.t Lwt.t
+  ; is_mergeable : bool
   }
 
 type deferred =
@@ -51,7 +52,7 @@ module Page_object = struct
 
   let all_props t =
     Lwt_list.map_p
-      (fun { name; resolver } ->
+      (fun { name; resolver; _ } ->
         let* v = resolver () in
         Lwt.return (name, v))
       t.props
@@ -61,7 +62,7 @@ module Page_object = struct
     let deferred_prop = List.map (fun d -> d.prop) t.deferred in
     let all_props = List.append t.props deferred_prop in
     Lwt_list.filter_map_p
-      (fun { name; resolver } ->
+      (fun { name; resolver; _ } ->
         if List.exists (fun l -> l = name) keys
         then
           let* v = resolver () in
@@ -90,7 +91,7 @@ module Page_object = struct
     Lwt.return (`Assoc props)
   ;;
 
-  let deferred_props_by_group t =
+  let get_deferred_props_by_group t =
     let groups = Hashtbl.create @@ List.length t.deferred in
     List.iter
       (fun { prop = { name; _ }; group } ->
@@ -109,20 +110,40 @@ module Page_object = struct
     `Assoc g
   ;;
 
+  let get_mergeable_props t =
+    let p =
+      List.filter_map
+        (fun { name; is_mergeable; _ } ->
+          if is_mergeable then Some (`String name) else None)
+        t.props
+    in
+    let d =
+      List.filter_map
+        (fun { prop = { name; is_mergeable; _ }; _ } ->
+          if is_mergeable then Some (`String name) else None)
+        t.deferred
+    in
+    `List (p @ d)
+  ;;
+
+  let version_to_json t =
+    t.version |> Option.map (fun v -> `String v) |> Option.value ~default:`Null
+  ;;
+
   let to_json t keys =
-    let v = t.version |> Option.map (fun v -> `String v) |> Option.value ~default:`Null in
     let* props = props_to_json t keys in
     let json =
       [ "component", `String t.component
       ; "props", props
       ; "url", `String t.url
-      ; "version", v
+      ; "version", version_to_json t
+      ; "mergeProps", get_mergeable_props t
       ]
     in
     let json =
       match keys with
       | All ->
-        let deferred_props = deferred_props_by_group t in
+        let deferred_props = get_deferred_props_by_group t in
         ("deferredProps", deferred_props) :: json
       | Partial _ -> json
     in
@@ -215,5 +236,9 @@ module Make (Config : CONFIG) : INERTIA = struct
   ;;
 end
 
-let prop name resolver = { name; resolver }
-let defer name ?(group = "default") resolver = { prop = { name; resolver }; group }
+let prop name ?(merge = false) resolver = { name; is_mergeable = merge; resolver }
+
+let defer name ?(merge = false) ?(group = "default") resolver =
+  let prop = prop name ~merge resolver in
+  { prop; group }
+;;
