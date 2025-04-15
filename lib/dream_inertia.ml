@@ -88,7 +88,7 @@ module Page_object = struct
       | All -> all_props t
       | Partial keys -> find_props_by_key t keys
     in
-    Lwt.return (`Assoc props)
+    Lwt.return @@ `Assoc props
   ;;
 
   let get_deferred_props_by_group t =
@@ -130,6 +130,7 @@ module Page_object = struct
     t.version |> Option.map (fun v -> `String v) |> Option.value ~default:`Null
   ;;
 
+  (* TODO: essayer d'en faire un pipeline ici sera certainement plus simple a lire *)
   let to_json t keys =
     let* props = props_to_json t keys in
     let json =
@@ -165,7 +166,7 @@ module Make (Config : CONFIG) : INERTIA = struct
   type request_kind =
     | Initial_load
     | Inertia_request
-    | Intertia_partial_request of partial_reload_data
+    | Inertia_partial_request of partial_reload_data
 
   let get_data_keys data_keys =
     String.split_on_char ',' data_keys
@@ -180,7 +181,7 @@ module Make (Config : CONFIG) : INERTIA = struct
     match h "X-Inertia", h "X-Inertia-Partial-Data", h "X-Inertia-Partial-Component" with
     | Some "true", Some keys, Some component ->
       let requested_keys = get_data_keys keys in
-      Intertia_partial_request { requested_keys; component }
+      Inertia_partial_request { requested_keys; component }
     | Some "true", _, _ -> Inertia_request
     | _, _, _ -> Initial_load
   ;;
@@ -198,7 +199,9 @@ module Make (Config : CONFIG) : INERTIA = struct
 
   let respond_with_html po =
     let* resp = Page_object.to_string po All in
-    let app = Fmt.str {html|<div id="app" data-page='%s'></div> |html} resp in
+    let app =
+      Dream.html_escape @@ Fmt.str {html|<div id="app" data-page='%s'></div> |html} resp
+    in
     let head = "<!-- inertia head -->" in
     Dream.html @@ Config.render ~app ~head
   ;;
@@ -207,9 +210,9 @@ module Make (Config : CONFIG) : INERTIA = struct
     match request_kind request with
     | Initial_load -> respond_with_html po
     | Inertia_request -> respond_with_json po All
-    | Intertia_partial_request { component; requested_keys } ->
+    | Inertia_partial_request { component; requested_keys } ->
       if component <> po.component
-      then respond_with_html po
+      then respond_with_json po All
       else respond_with_json po (Partial requested_keys)
   ;;
 

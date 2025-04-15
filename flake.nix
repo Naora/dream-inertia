@@ -44,8 +44,6 @@
             self.packages.${system}.default
           ];
           packages = [
-            ocamlPackages.ocaml
-            ocamlPackages.dune 
             ocamlPackages.ocaml-lsp
             ocamlPackages.ocamlformat
             ocamlPackages.utop
