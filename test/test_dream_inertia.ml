@@ -47,12 +47,16 @@ struct
       request
       ~component:"Mergeable"
       ~props:
-        [ prop "merge_this" ~merge:true (fun () -> Lwt.return (`String "merged"))
+        [ prop "merge_this" ~merge:Merge (fun () -> Lwt.return (`String "merged"))
         ; prop "not_this" (fun () -> Lwt.return (`String "ow no"))
+        ; prop "deep_merge_this" ~merge:Deep_merge (fun () ->
+            Lwt.return (`String "deep thinking"))
         ]
       ~deferred:
-        [ defer "merge_this_d" ~merge:true (fun () -> Lwt.return (`String "merged"))
+        [ defer "merge_this_d" ~merge:Merge (fun () -> Lwt.return (`String "merged"))
         ; defer "not_this_d" (fun () -> Lwt.return (`String "ow no"))
+        ; defer "deep_merge_this_d" ~merge:Deep_merge (fun () ->
+            Lwt.return (`String "deep thinking"))
         ]
   ;;
 

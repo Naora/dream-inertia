@@ -7,7 +7,7 @@ TODO :
      - Adding the X-Inertia-Location 
 - [x] Merged props
      - MergeProps is a property, which items will be merged instead of overwrite.
-     - [ ] deepMergeProps is also a thing... i need to turn the boolean into a ADT
+     - [x] deepMergeProps is also a thing... i need to turn the boolean into a ADT
 - [ ] Add always props
 - [ ] add optional props
 - [ ] Error validation on backend side  

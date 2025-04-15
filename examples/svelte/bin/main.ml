@@ -35,7 +35,7 @@ let home_handler request =
           }
           |> yojson_of_event
           |> Lwt.return)
-      ; prop ~merge:true "events" (fun () ->
+      ; prop ~merge:Merge "events" (fun () ->
           let events =
             [ { id = "123"
               ; title = "Johannas event"

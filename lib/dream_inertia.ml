@@ -3,13 +3,18 @@ open Lwt.Syntax
 type prop =
   { name : string
   ; resolver : unit -> Yojson.Safe.t Lwt.t
-  ; is_mergeable : bool
+  ; merge_kind : merge_kind
   }
 
-type deferred =
+and deferred =
   { prop : prop
   ; group : string
   }
+
+and merge_kind =
+  | No_merge
+  | Merge
+  | Deep_merge
 
 type version = string option
 
@@ -111,42 +116,48 @@ module Page_object = struct
   ;;
 
   let get_mergeable_props t =
-    let p =
-      List.filter_map
-        (fun { name; is_mergeable; _ } ->
-          if is_mergeable then Some (`String name) else None)
+    let aux (p, d) n m =
+      match m with
+      | No_merge -> p, d
+      | Merge -> `String n :: p, d
+      | Deep_merge -> p, `String n :: d
+    in
+    let temp =
+      List.fold_left
+        (fun acc { name; merge_kind; _ } -> aux acc name merge_kind)
+        ([], [])
         t.props
     in
-    let d =
-      List.filter_map
-        (fun { prop = { name; is_mergeable; _ }; _ } ->
-          if is_mergeable then Some (`String name) else None)
+    let m, d =
+      List.fold_left
+        (fun acc { prop = { name; merge_kind; _ }; _ } -> aux acc name merge_kind)
+        temp
         t.deferred
     in
-    `List (p @ d)
+    `List m, `List d
   ;;
 
   let version_to_json t =
     t.version |> Option.map (fun v -> `String v) |> Option.value ~default:`Null
   ;;
 
-  (* TODO: essayer d'en faire un pipeline ici sera certainement plus simple a lire *)
   let to_json t keys =
     let* props = props_to_json t keys in
+    let merge_props, deep_merge_props = get_mergeable_props t in
+    let deferred_props =
+      match keys with
+      | All -> get_deferred_props_by_group t
+      | Partial _ -> `Assoc []
+    in
     let json =
       [ "component", `String t.component
       ; "props", props
       ; "url", `String t.url
       ; "version", version_to_json t
-      ; "mergeProps", get_mergeable_props t
+      ; "mergeProps", merge_props
+      ; "deepMergeProps", deep_merge_props
+      ; "deferredProps", deferred_props
       ]
-    in
-    let json =
-      match keys with
-      | All ->
-        let deferred_props = get_deferred_props_by_group t in
-        ("deferredProps", deferred_props) :: json
-      | Partial _ -> json
     in
     Lwt.return (`Assoc json)
   ;;
@@ -198,10 +209,7 @@ module Make (Config : CONFIG) : INERTIA = struct
   ;;
 
   let respond_with_html po =
-    let* resp = Page_object.to_string po All in
-    let app =
-      Dream.html_escape @@ Fmt.str {html|<div id="app" data-page='%s'></div> |html} resp
-    in
+    let* app = Page_object.to_string po All in
     let head = "<!-- inertia head -->" in
     Dream.html @@ Config.render ~app ~head
   ;;
@@ -239,9 +247,9 @@ module Make (Config : CONFIG) : INERTIA = struct
   ;;
 end
 
-let prop name ?(merge = false) resolver = { name; is_mergeable = merge; resolver }
+let prop name ?(merge = No_merge) resolver = { name; merge_kind = merge; resolver }
 
-let defer name ?(merge = false) ?(group = "default") resolver =
+let defer name ?(merge = No_merge) ?(group = "default") resolver =
   let prop = prop name ~merge resolver in
   { prop; group }
 ;;

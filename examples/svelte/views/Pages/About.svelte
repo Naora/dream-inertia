@@ -1,4 +1,3 @@
-
 <script>
 	import { Link } from "@inertiajs/svelte";
 </script>
