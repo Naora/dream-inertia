@@ -4,11 +4,7 @@ type prop =
   { name : string
   ; resolver : unit -> Yojson.Safe.t Lwt.t
   ; merge_kind : merge_kind
-  }
-
-and deferred =
-  { prop : prop
-  ; group : string
+  ; defer : string option
   }
 
 and merge_kind =
@@ -28,7 +24,6 @@ module type INERTIA = sig
   val render
     :  component:string
     -> ?props:prop list
-    -> ?deferred:deferred list
     -> Dream.request
     -> Dream.response Lwt.t
 
@@ -40,7 +35,6 @@ module Page_object = struct
     { component : string
     ; shared : prop list option
     ; props : prop list
-    ; deferred : deferred list
     ; url : string
     ; version : version
     }
@@ -64,8 +58,6 @@ module Page_object = struct
   ;;
 
   let find_props_by_key t keys =
-    let deferred_prop = List.map (fun d -> d.prop) t.deferred in
-    let all_props = List.append t.props deferred_prop in
     Lwt_list.filter_map_p
       (fun { name; resolver; _ } ->
         if List.exists (fun l -> l = name) keys
@@ -73,7 +65,7 @@ module Page_object = struct
           let* v = resolver () in
           Lwt.return_some (name, v)
         else Lwt.return_none)
-      all_props
+      t.props
   ;;
 
   let merge_shared_props t =
@@ -97,13 +89,16 @@ module Page_object = struct
   ;;
 
   let get_deferred_props_by_group t =
-    let groups = Hashtbl.create @@ List.length t.deferred in
+    let groups = Hashtbl.create 32 in
     List.iter
-      (fun { prop = { name; _ }; group } ->
-        match Hashtbl.find_opt groups group with
-        | None -> Hashtbl.add groups group [ name ]
-        | Some g -> Hashtbl.replace groups group (name :: g))
-      t.deferred;
+      (fun { name; defer; _ } ->
+        match defer with
+        | Some group ->
+          (match Hashtbl.find_opt groups group with
+           | None -> Hashtbl.add groups group [ name ]
+           | Some g -> Hashtbl.replace groups group (name :: g))
+        | None -> ())
+      t.props;
     let g =
       Hashtbl.fold
         (fun name props acc ->
@@ -122,17 +117,11 @@ module Page_object = struct
       | Merge -> `String n :: p, d
       | Deep_merge -> p, `String n :: d
     in
-    let temp =
+    let m, d =
       List.fold_left
         (fun acc { name; merge_kind; _ } -> aux acc name merge_kind)
         ([], [])
         t.props
-    in
-    let m, d =
-      List.fold_left
-        (fun acc { prop = { name; merge_kind; _ }; _ } -> aux acc name merge_kind)
-        temp
-        t.deferred
     in
     `List m, `List d
   ;;
@@ -224,13 +213,12 @@ module Make (Config : CONFIG) : INERTIA = struct
       else respond_with_json po (Partial requested_keys)
   ;;
 
-  let render ~component ?(props = []) ?(deferred = []) request =
+  let render ~component ?(props = []) request =
     let po =
       Page_object.
         { component
         ; shared = Config.shared request
         ; props
-        ; deferred
         ; url = Dream.target request
         ; version = Config.version ()
         }
@@ -247,9 +235,8 @@ module Make (Config : CONFIG) : INERTIA = struct
   ;;
 end
 
-let prop name ?(merge = No_merge) resolver = { name; merge_kind = merge; resolver }
-
-let defer name ?(merge = No_merge) ?(group = "default") resolver =
-  let prop = prop name ~merge resolver in
-  { prop; group }
+let prop ?defer ?(merge = No_merge) name resolver =
+  { name; merge_kind = merge; defer; resolver }
 ;;
+
+let defer ?(group = "default") = prop ~defer:group

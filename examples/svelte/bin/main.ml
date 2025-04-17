@@ -46,9 +46,7 @@ let home_handler request =
             |> List.map yojson_of_event
           in
           Lwt.return (`List events))
-      ]
-    ~deferred:
-      [ defer "permissions" (fun () ->
+      ; defer "permissions" (fun () ->
           let open Lwt.Syntax in
           let* _ = Lwt_unix.sleep 3. in
           Lwt.return ({ kind = "read" } |> yojson_of_permission))
