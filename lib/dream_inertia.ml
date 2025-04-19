@@ -3,14 +3,20 @@ open Lwt.Syntax
 type prop =
   { name : string
   ; resolver : unit -> Yojson.Safe.t Lwt.t
-  ; merge_kind : merge_kind
-  ; defer : string option
+  ; merging_mode : merge_kind
+  ; loading_mode : loading_kind
   }
 
 and merge_kind =
   | No_merge
   | Merge
   | Deep_merge
+
+and loading_kind =
+  | Default
+  | Defer of string
+  | Always
+  | Optional
 
 type version = string option
 
@@ -50,17 +56,20 @@ module Page_object = struct
   ;;
 
   let all_props t =
-    Lwt_list.map_p
-      (fun { name; resolver; _ } ->
-        let* v = resolver () in
-        Lwt.return (name, v))
+    Lwt_list.filter_map_p
+      (fun { name; resolver; loading_mode; _ } ->
+        match loading_mode with
+        | Optional | Defer _ -> Lwt.return_none
+        | Always | Default ->
+          let* v = resolver () in
+          Lwt.return_some (name, v))
       t.props
   ;;
 
   let find_props_by_key t keys =
     Lwt_list.filter_map_p
-      (fun { name; resolver; _ } ->
-        if List.exists (fun l -> l = name) keys
+      (fun { name; resolver; loading_mode; _ } ->
+        if List.exists (fun l -> l = name || loading_mode = Always) keys
         then
           let* v = resolver () in
           Lwt.return_some (name, v)
@@ -78,7 +87,7 @@ module Page_object = struct
     | None -> t
   ;;
 
-  let props_to_json t keys =
+  let json_of_props t keys =
     let t = merge_shared_props t in
     let* props =
       match keys with
@@ -88,16 +97,16 @@ module Page_object = struct
     Lwt.return @@ `Assoc props
   ;;
 
-  let get_deferred_props_by_group t =
+  let json_of_deferred_props_by_group t =
     let groups = Hashtbl.create 32 in
     List.iter
-      (fun { name; defer; _ } ->
-        match defer with
-        | Some group ->
+      (fun { name; loading_mode; _ } ->
+        match loading_mode with
+        | Defer group ->
           (match Hashtbl.find_opt groups group with
            | None -> Hashtbl.add groups group [ name ]
            | Some g -> Hashtbl.replace groups group (name :: g))
-        | None -> ())
+        | Always | Default | Optional -> ())
       t.props;
     let g =
       Hashtbl.fold
@@ -110,39 +119,37 @@ module Page_object = struct
     `Assoc g
   ;;
 
-  let get_mergeable_props t =
-    let aux (p, d) n m =
-      match m with
-      | No_merge -> p, d
-      | Merge -> `String n :: p, d
-      | Deep_merge -> p, `String n :: d
-    in
+  let json_of_mergeable_props t =
     let m, d =
       List.fold_left
-        (fun acc { name; merge_kind; _ } -> aux acc name merge_kind)
+        (fun (p, d) { name; merging_mode; _ } ->
+          match merging_mode with
+          | No_merge -> p, d
+          | Merge -> `String name :: p, d
+          | Deep_merge -> p, `String name :: d)
         ([], [])
         t.props
     in
     `List m, `List d
   ;;
 
-  let version_to_json t =
+  let json_of_version t =
     t.version |> Option.map (fun v -> `String v) |> Option.value ~default:`Null
   ;;
 
   let to_json t keys =
-    let* props = props_to_json t keys in
-    let merge_props, deep_merge_props = get_mergeable_props t in
+    let* props = json_of_props t keys in
+    let merge_props, deep_merge_props = json_of_mergeable_props t in
     let deferred_props =
       match keys with
-      | All -> get_deferred_props_by_group t
+      | All -> json_of_deferred_props_by_group t
       | Partial _ -> `Assoc []
     in
     let json =
       [ "component", `String t.component
       ; "props", props
       ; "url", `String t.url
-      ; "version", version_to_json t
+      ; "version", json_of_version t
       ; "mergeProps", merge_props
       ; "deepMergeProps", deep_merge_props
       ; "deferredProps", deferred_props
@@ -235,8 +242,8 @@ module Make (Config : CONFIG) : INERTIA = struct
   ;;
 end
 
-let prop ?defer ?(merge = No_merge) name resolver =
-  { name; merge_kind = merge; defer; resolver }
+let prop ?(merge = No_merge) ?(load = Default) name resolver =
+  { name; merging_mode = merge; resolver; loading_mode = load }
 ;;
 
-let defer ?(group = "default") = prop ~defer:group
+let defer ?(group = "default") = prop ~load:(Defer group)

@@ -58,6 +58,19 @@ struct
         ]
   ;;
 
+  let handler_loading request =
+    let open Dream_inertia in
+    Inertia.render
+      request
+      ~component:"Loading"
+      ~props:
+        [ prop "default" (fun () -> Lwt.return (`String "default"))
+        ; prop "always" ~load:Always (fun () -> Lwt.return (`String "always"))
+        ; prop "optional" ~load:Optional (fun () -> Lwt.return (`String "optional"))
+        ; defer "defer" (fun () -> Lwt.return (`String "defer"))
+        ]
+  ;;
+
   let handler_with_shared_data request =
     Inertia.render
       request
@@ -79,15 +92,31 @@ struct
          ; Dream.get "/shared" handler_with_shared_data
          ; Dream.get "/location" handler_location
          ; Dream.get "/mergeable" handler_mergeable
+         ; Dream.get "/loading" handler_loading
          ]
   ;;
 end
 
-let inertia_header ?(accept = "text/html, application/xhtml+xml") ?version ?inertia () =
+let inertia_header
+  ?(accept = "text/html, application/xhtml+xml")
+  ?version
+  ?inertia
+  ?(partial = [])
+  ?(component = "Loading")
+  ()
+  =
   let string_header h v = Option.map (fun (v : string) -> h, v) v in
   let version = string_header "X-Inertia-Version" version in
   let inertia = Option.map (fun i -> "X-Inertia", string_of_bool i) inertia in
-  [ Some ("Accept", accept); inertia; version ] |> List.filter_map (fun x -> x)
+  let partial =
+    if List.length partial = 0
+    then []
+    else
+      [ Some ("X-Inertia-Partial-Component", component)
+      ; Some ("X-Inertia-Partial-Data", String.concat ", " partial)
+      ]
+  in
+  partial @ [ Some ("Accept", accept); inertia; version ] |> List.filter_map (fun x -> x)
 ;;
 
 module NoVersionServer = Server (struct
@@ -144,5 +173,30 @@ let () =
   test
     "test mergeable props"
     NoVersionServer.routes
-    (Dream.request ~target:"/mergeable" ~headers:(inertia_header ~inertia:true ()) "")
+    (Dream.request ~target:"/mergeable" ~headers:(inertia_header ~inertia:true ()) "");
+  test
+    "test default load props"
+    NoVersionServer.routes
+    (Dream.request ~target:"/loading" ~headers:(inertia_header ~inertia:true ()) "");
+  test
+    "test load partial optional"
+    NoVersionServer.routes
+    (Dream.request
+       ~target:"/loading"
+       ~headers:(inertia_header ~inertia:true () ~partial:[ "optional" ])
+       "");
+  test
+    "test load partial without optional"
+    NoVersionServer.routes
+    (Dream.request
+       ~target:"/loading"
+       ~headers:(inertia_header ~inertia:true ~partial:[ "default" ] ())
+       "");
+  test
+    "test load partial with wrong component"
+    NoVersionServer.routes
+    (Dream.request
+       ~target:"/loading"
+       ~headers:(inertia_header ~inertia:true ~partial:[ "default" ] ~component:"Test" ())
+       "")
 ;;

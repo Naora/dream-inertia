@@ -144,7 +144,7 @@ GET: /mergeable
 200 OK
 [Content-Type: text/html; charset=utf-8]
 
-<html><head><!-- inertia head --></head><body>{"component":"Mergeable","props":{"deep_merge_this":"deep thinking","deep_merge_this_d":"deep thinking","merge_this":"merged","merge_this_d":"merged","not_this":"ow no","not_this_d":"ow no","shared_test":"hello"},"url":"/mergeable","version":null,"mergeProps":["merge_this_d","merge_this"],"deepMergeProps":["deep_merge_this_d","deep_merge_this"],"deferredProps":{"default":["deep_merge_this_d","not_this_d","merge_this_d"]}}</body></html>
+<html><head><!-- inertia head --></head><body>{"component":"Mergeable","props":{"deep_merge_this":"deep thinking","merge_this":"merged","not_this":"ow no","shared_test":"hello"},"url":"/mergeable","version":null,"mergeProps":["merge_this_d","merge_this"],"deepMergeProps":["deep_merge_this_d","deep_merge_this"],"deferredProps":{"default":["deep_merge_this_d","not_this_d","merge_this_d"]}}</body></html>
 
 
 test: test mergeable props
@@ -159,6 +159,72 @@ GET: /mergeable
  X-Inertia: true
  Content-Type: application/json]
 
-{"component":"Mergeable","props":{"deep_merge_this":"deep thinking","deep_merge_this_d":"deep thinking","merge_this":"merged","merge_this_d":"merged","not_this":"ow no","not_this_d":"ow no","shared_test":"hello"},"url":"/mergeable","version":null,"mergeProps":["merge_this_d","merge_this"],"deepMergeProps":["deep_merge_this_d","deep_merge_this"],"deferredProps":{"default":["deep_merge_this_d","not_this_d","merge_this_d"]}}
+{"component":"Mergeable","props":{"deep_merge_this":"deep thinking","merge_this":"merged","not_this":"ow no","shared_test":"hello"},"url":"/mergeable","version":null,"mergeProps":["merge_this_d","merge_this"],"deepMergeProps":["deep_merge_this_d","deep_merge_this"],"deferredProps":{"default":["deep_merge_this_d","not_this_d","merge_this_d"]}}
+
+
+test: test default load props
+--- request ---
+GET: /loading
+[Accept: text/html, application/xhtml+xml
+ X-Inertia: true]
+
+--- response ---
+200 OK
+[Vary: X-Inertia
+ X-Inertia: true
+ Content-Type: application/json]
+
+{"component":"Loading","props":{"always":"always","default":"default","shared_test":"hello"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{"default":["defer"]}}
+
+
+test: test load partial optional
+--- request ---
+GET: /loading
+[X-Inertia-Partial-Component: Loading
+ X-Inertia-Partial-Data: optional
+ Accept: text/html, application/xhtml+xml
+ X-Inertia: true]
+
+--- response ---
+200 OK
+[Vary: X-Inertia
+ X-Inertia: true
+ Content-Type: application/json]
+
+{"component":"Loading","props":{"always":"always","optional":"optional"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{}}
+
+
+test: test load partial without optional
+--- request ---
+GET: /loading
+[X-Inertia-Partial-Component: Loading
+ X-Inertia-Partial-Data: default
+ Accept: text/html, application/xhtml+xml
+ X-Inertia: true]
+
+--- response ---
+200 OK
+[Vary: X-Inertia
+ X-Inertia: true
+ Content-Type: application/json]
+
+{"component":"Loading","props":{"always":"always","default":"default"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{}}
+
+
+test: test load partial with wrong component
+--- request ---
+GET: /loading
+[X-Inertia-Partial-Component: Test
+ X-Inertia-Partial-Data: default
+ Accept: text/html, application/xhtml+xml
+ X-Inertia: true]
+
+--- response ---
+200 OK
+[Vary: X-Inertia
+ X-Inertia: true
+ Content-Type: application/json]
+
+{"component":"Loading","props":{"always":"always","default":"default","shared_test":"hello"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{"default":["defer"]}}
 
 
