@@ -8,8 +8,8 @@ TODO :
 - [x] Merged props
      - MergeProps is a property, which items will be merged instead of overwrite.
      - [x] deepMergeProps is also a thing... i need to turn the boolean into a ADT
-- [ ] Add always props
-- [ ] add optional props
+- [x] Add always props
+- [x] add optional props
 - [ ] Error validation on backend side  
 - [ ] CSRF token
 - [ ] History encryption

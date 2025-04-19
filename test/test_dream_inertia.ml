@@ -135,65 +135,62 @@ let test message routes request =
 
 let () =
   test
-    "test initial load"
+    "initial load"
     NoVersionServer.routes
     (Dream.request ~headers:(inertia_header ()) "");
   test
-    "test inertia load"
+    "inertia load"
     NoVersionServer.routes
     (Dream.request ~headers:(inertia_header ~inertia:true ()) "");
   test
-    "test inertia with stale version. Server has version \"0\""
+    "inertia with stale version. Server has version \"0\""
     WithVersionServer.routes
     (Dream.request ~headers:(inertia_header ~inertia:true ~version:"1" ()) "");
   [ `POST; `PATCH; `PUT; `DELETE ]
   |> List.iter (fun method_ ->
     test
       (Fmt.str
-         "test inertia with stale version and a %s method. Server has version \"0\""
+         "inertia with stale version and a %s method. Server has version \"0\""
          (Dream.method_to_string method_))
       WithVersionServer.routes
       (Dream.request ~method_ ~headers:(inertia_header ~inertia:true ~version:"1" ()) ""));
   test
-    "test with shared data collisions"
+    "with shared data collisions"
     NoVersionServer.routes
     (Dream.request ~target:"/shared" ~headers:(inertia_header ~inertia:true ()) "");
   test
-    "test location with inertia request"
+    "location with inertia request"
     NoVersionServer.routes
     (Dream.request ~target:"/location" ~headers:(inertia_header ~inertia:true ()) "");
   test
-    "test location is initial load"
+    "location is initial load"
     NoVersionServer.routes
     (Dream.request ~target:"/location" "");
+  test "mergeable props" NoVersionServer.routes (Dream.request ~target:"/mergeable" "");
   test
-    "test mergeable props"
-    NoVersionServer.routes
-    (Dream.request ~target:"/mergeable" "");
-  test
-    "test mergeable props"
+    "mergeable props"
     NoVersionServer.routes
     (Dream.request ~target:"/mergeable" ~headers:(inertia_header ~inertia:true ()) "");
   test
-    "test default load props"
+    "default load props"
     NoVersionServer.routes
     (Dream.request ~target:"/loading" ~headers:(inertia_header ~inertia:true ()) "");
   test
-    "test load partial optional"
+    "load partial optional"
     NoVersionServer.routes
     (Dream.request
        ~target:"/loading"
        ~headers:(inertia_header ~inertia:true () ~partial:[ "optional" ])
        "");
   test
-    "test load partial without optional"
+    "load partial without optional"
     NoVersionServer.routes
     (Dream.request
        ~target:"/loading"
        ~headers:(inertia_header ~inertia:true ~partial:[ "default" ] ())
        "");
   test
-    "test load partial with wrong component"
+    "load partial with wrong component"
     NoVersionServer.routes
     (Dream.request
        ~target:"/loading"

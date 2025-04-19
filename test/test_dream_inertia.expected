@@ -1,4 +1,4 @@
-test: test initial load
+test: initial load
 --- request ---
 GET: /
 [Accept: text/html, application/xhtml+xml]
@@ -10,7 +10,7 @@ GET: /
 <html><head><!-- inertia head --></head><body>{"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{}}</body></html>
 
 
-test: test inertia load
+test: inertia load
 --- request ---
 GET: /
 [Accept: text/html, application/xhtml+xml
@@ -25,7 +25,7 @@ GET: /
 {"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{}}
 
 
-test: test inertia with stale version. Server has version "0"
+test: inertia with stale version. Server has version "0"
 --- request ---
 GET: /
 [Accept: text/html, application/xhtml+xml
@@ -39,7 +39,7 @@ GET: /
 
 
 
-test: test inertia with stale version and a POST method. Server has version "0"
+test: inertia with stale version and a POST method. Server has version "0"
 --- request ---
 POST: /
 [Accept: text/html, application/xhtml+xml
@@ -53,7 +53,7 @@ POST: /
 
 
 
-test: test inertia with stale version and a PATCH method. Server has version "0"
+test: inertia with stale version and a PATCH method. Server has version "0"
 --- request ---
 PATCH: /
 [Accept: text/html, application/xhtml+xml
@@ -67,7 +67,7 @@ PATCH: /
 
 
 
-test: test inertia with stale version and a PUT method. Server has version "0"
+test: inertia with stale version and a PUT method. Server has version "0"
 --- request ---
 PUT: /
 [Accept: text/html, application/xhtml+xml
@@ -81,7 +81,7 @@ PUT: /
 
 
 
-test: test inertia with stale version and a DELETE method. Server has version "0"
+test: inertia with stale version and a DELETE method. Server has version "0"
 --- request ---
 DELETE: /
 [Accept: text/html, application/xhtml+xml
@@ -95,7 +95,7 @@ DELETE: /
 
 
 
-test: test with shared data collisions
+test: with shared data collisions
 --- request ---
 GET: /shared
 [Accept: text/html, application/xhtml+xml
@@ -110,7 +110,7 @@ GET: /shared
 {"component":"Test","props":{"shared_test":"overriden shared data"},"url":"/shared","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{}}
 
 
-test: test location with inertia request
+test: location with inertia request
 --- request ---
 GET: /location
 [Accept: text/html, application/xhtml+xml
@@ -123,7 +123,7 @@ GET: /location
 
 
 
-test: test location is initial load
+test: location is initial load
 --- request ---
 GET: /location
 []
@@ -135,7 +135,7 @@ GET: /location
 
 
 
-test: test mergeable props
+test: mergeable props
 --- request ---
 GET: /mergeable
 []
@@ -147,7 +147,7 @@ GET: /mergeable
 <html><head><!-- inertia head --></head><body>{"component":"Mergeable","props":{"deep_merge_this":"deep thinking","merge_this":"merged","not_this":"ow no","shared_test":"hello"},"url":"/mergeable","version":null,"mergeProps":["merge_this_d","merge_this"],"deepMergeProps":["deep_merge_this_d","deep_merge_this"],"deferredProps":{"default":["deep_merge_this_d","not_this_d","merge_this_d"]}}</body></html>
 
 
-test: test mergeable props
+test: mergeable props
 --- request ---
 GET: /mergeable
 [Accept: text/html, application/xhtml+xml
@@ -162,7 +162,7 @@ GET: /mergeable
 {"component":"Mergeable","props":{"deep_merge_this":"deep thinking","merge_this":"merged","not_this":"ow no","shared_test":"hello"},"url":"/mergeable","version":null,"mergeProps":["merge_this_d","merge_this"],"deepMergeProps":["deep_merge_this_d","deep_merge_this"],"deferredProps":{"default":["deep_merge_this_d","not_this_d","merge_this_d"]}}
 
 
-test: test default load props
+test: default load props
 --- request ---
 GET: /loading
 [Accept: text/html, application/xhtml+xml
@@ -177,7 +177,7 @@ GET: /loading
 {"component":"Loading","props":{"always":"always","default":"default","shared_test":"hello"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{"default":["defer"]}}
 
 
-test: test load partial optional
+test: load partial optional
 --- request ---
 GET: /loading
 [X-Inertia-Partial-Component: Loading
@@ -194,7 +194,7 @@ GET: /loading
 {"component":"Loading","props":{"always":"always","optional":"optional"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{}}
 
 
-test: test load partial without optional
+test: load partial without optional
 --- request ---
 GET: /loading
 [X-Inertia-Partial-Component: Loading
@@ -211,7 +211,7 @@ GET: /loading
 {"component":"Loading","props":{"always":"always","default":"default"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{}}
 
 
-test: test load partial with wrong component
+test: load partial with wrong component
 --- request ---
 GET: /loading
 [X-Inertia-Partial-Component: Test
