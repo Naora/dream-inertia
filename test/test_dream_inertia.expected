@@ -5,9 +5,11 @@ GET: /
 
 --- response ---
 200 OK
-[Content-Type: text/html; charset=utf-8]
+[Content-Type: text/html; charset=utf-8
+ Set-Cookie: XSRF-TOKEN=AESp_7Gj-J4virwTLFw0GmfSgbo26KdIl5u_iWD61VCfSUJLU-yMSCHSWTYjoj7czihZSTP-FZvIZUGSw9d0M-M-4P8PmcEx7E0ld_Adu2G_SYkBaiiY3zkslMJRsKsGwnyit4WYvzrwfgJKk4aoFgs6IWzoSPkarTZlM1coXRATzsALiq1yw4w; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=0DP3iVYXK7zurseISEaVrRk2f; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
-<html><head><!-- inertia head --></head><body>{"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{}}</body></html>
+<html><head><!-- inertia head --></head><body>{"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{},"clearHistory":false,"encryptHistory":false}</body></html>
 
 
 test: inertia load
@@ -20,9 +22,11 @@ GET: /
 200 OK
 [Vary: X-Inertia
  X-Inertia: true
- Content-Type: application/json]
+ Content-Type: application/json
+ Set-Cookie: XSRF-TOKEN=AE8E7e9XjlEqV2IQl6vF-S-xeT67oQ4zQPlsGLtRk1JzIVsVYaEw0RY05DIY3WYqJnUjUWSOqNCjKqIX7pffNi078D2h-SvvhD2-CEssRf0ycj2hsS7xpnmwkjeLkZIVN3ZeTtIEOaA09rQ_xZaj7vmL-S6GwSfOX-Ej5tHVMg2tEJTs5OSIQrc; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=0OQI8XBYc9v79UptNiAfE6P0z; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
-{"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{}}
+{"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{},"clearHistory":false,"encryptHistory":false}
 
 
 test: inertia with stale version. Server has version "0"
@@ -34,7 +38,9 @@ GET: /
 
 --- response ---
 409 Conflict
-[X-Inertia-Location: /]
+[X-Inertia-Location: /
+ Set-Cookie: XSRF-TOKEN=AOdDfqQ8jKTqusUjlgFz5z0RBOVa1P-H1v8vIaJaR7SAfw5JvYMmRACwdfB6A3ohF1goBBj4BmjfKS7MqIAvW4Jd4mxNgx_zpgIDQMFGLOHPWtLbTxDtmWrUYph9NsgO5dY1qtGKavMv2sxDVclnjloLYAm940ViK-8aUjwnlvjzwxDwocHrAdY; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=0zxZ1uXDUtS0pXmIXwbwgGN6R; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
 
 
@@ -48,7 +54,9 @@ POST: /
 
 --- response ---
 303 See Other
-[Location: /]
+[Location: /
+ Set-Cookie: XSRF-TOKEN=AO_vJOibIlqM4AhVBXGCnk3dVbmQgSOvkW0iPjbZK27sUIQS12mJKJxnijVji1IyCG5fpH24nt2UiCj-7pJ3J-0OUjVd6LjAKcSI2SJeSTADeHtladXBX957OdJVJZM3Bf-O_ASj5Nr1mfXX9xNSuEKngg5JEUpwBLlamODyz0otryV9UoQVb_Q; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=0SsSqDGINTD9hkd7EibtEn4fA; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
 
 
@@ -62,7 +70,9 @@ PATCH: /
 
 --- response ---
 303 See Other
-[Location: /]
+[Location: /
+ Set-Cookie: XSRF-TOKEN=AAZKK1Cb3I6h_BEYnxqB8wk9D1Nn8DrbelgbNtyLgC3kDIcCJai7C1FGpNVON-FLSvEynosMBoAOENTWrXok6e5ZChgTx9pikPff_uhwtiTh4FicdAs83l0nQjQPRSCOBk853lRTN47VGw93Ez_qNUcsuaQQ0yoGZDFFHw651lzTcX4HwbmOT6Y; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=09QyGi-nrtbFVuugjqi8aLakF; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
 
 
@@ -76,7 +86,9 @@ PUT: /
 
 --- response ---
 303 See Other
-[Location: /]
+[Location: /
+ Set-Cookie: XSRF-TOKEN=AEz0RWXkwBsKq19PhMjN_zf96Ji0uwbZ81tjopj5aq8Ok6qPyphe-2vwjJ_ovo2f89iqZj1XDGNxB00Ho_0thCV-xrnVB6Us74x1KgQTnS9wI26ZxY5-Ji6xGrVb-8z1CUe-CtqGhPbm3gu3FrbbvKBltoQgysh8mwEYBUODqCMdzPH5gRWknuI; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=0OMHVScek75OuGwQC21fyergF; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
 
 
@@ -90,7 +102,9 @@ DELETE: /
 
 --- response ---
 303 See Other
-[Location: /]
+[Location: /
+ Set-Cookie: XSRF-TOKEN=ABIHvIGARJ0ShiOaRWzUBu3zXxiOvee7xj1LkFGTJDt4356wmfmXdjcmEEgnnJDdaortN94MT3NHGTS0mKB2VR_wk3mghxbkj21c5vtnmTd66RvbgARClRO91zfOxcpXkwVqVa2PLmBCLYzKYjNXPY3CY9pXWU4OVn9PFA2kAQrwXVGVo1ZQZ6A; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=0LruJEEXRi3V02lowTa7EUtV-; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
 
 
@@ -105,9 +119,11 @@ GET: /shared
 200 OK
 [Vary: X-Inertia
  X-Inertia: true
- Content-Type: application/json]
+ Content-Type: application/json
+ Set-Cookie: XSRF-TOKEN=AHIiqreqh7LPcR4DFgQkKTVzJ9xFMjYaOaRAseZJ_wS0tSYydFVxP6hNuc4hwCvsD66TPw0EaYHo99FLTwn29G4iWQ8S8MTVUrWM5D5C13XZsGfpYgtt6qHUCZi6CPlrbwn0xC_AzBqDqCnJEcF5zwpC7ybN-l7uEa-VNUOHvEqzgZiag_nLuXw; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=09o16rV3F0rPHOYLhP5h2RN4p; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
-{"component":"Test","props":{"shared_test":"overriden shared data"},"url":"/shared","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{}}
+{"component":"Test","props":{"shared_test":"overriden shared data"},"url":"/shared","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{},"clearHistory":false,"encryptHistory":false}
 
 
 test: location with inertia request
@@ -118,7 +134,9 @@ GET: /location
 
 --- response ---
 409 Conflict
-[X-Inertia-Location: https://www.google.com]
+[X-Inertia-Location: https://www.google.com
+ Set-Cookie: XSRF-TOKEN=ALsPuXTgsFb4SurVRhcLXImM03L-Oax9gyOimtOY6IruS1gvnhTTvG1N02w_QqMYno1JFUGVKCdiTCDcgUIP8bRAZGX32d7DiHYlZUlegqk2IPbeg_sJ1H3NSaz6mohWtJM1N2CVFNOOilQnqKMW9c3ojAuUNDEm0d74bbXXYThjhx0gB4t--Uc; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=0MDCHTB8aCvOkEFedQEkPpXm6; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
 
 
@@ -130,7 +148,9 @@ GET: /location
 
 --- response ---
 303 See Other
-[Location: https://www.google.com]
+[Location: https://www.google.com
+ Set-Cookie: XSRF-TOKEN=APsBSPZCEcOhIoTc2LZYkx1qCuit3XPnxKXR7tV5JXeDYRLiHVWIa52rgSIm7jMVzLWsKG9Jde4CiBOFr9ShUmb_HamFjnFYgKMAU_R6IGIs541KVHe0VWiUNtPGyb47IvtC7JZ1Kd8VOUMnoBHavyyLYcB2zm9UrSp4argQAkVhCZ2GxZ6i8mU; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=0kTXjDkZBB9M1TQpc17EnXY7v; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
 
 
@@ -142,9 +162,11 @@ GET: /mergeable
 
 --- response ---
 200 OK
-[Content-Type: text/html; charset=utf-8]
+[Content-Type: text/html; charset=utf-8
+ Set-Cookie: XSRF-TOKEN=AIhN6H1ajjvFz68rYNAKFhLNki9JMX7lKY2erykp62okIx_3fk7MbSw_7Im61K_bEpvFuewlM9Kagre5BAzP0LAbIRtYAMom8N13wKaMN1wG8AR3o015HInRefsso8gi9Mi6XCT3mdPecorgIO5A-9-_EmaMj17P-pj1_Os0gE4_BWoDx0LCIqI; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=079VDfdGbjMT9CT8y2FzLWtOS; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
-<html><head><!-- inertia head --></head><body>{"component":"Mergeable","props":{"deep_merge_this":"deep thinking","merge_this":"merged","not_this":"ow no","shared_test":"hello"},"url":"/mergeable","version":null,"mergeProps":["merge_this_d","merge_this"],"deepMergeProps":["deep_merge_this_d","deep_merge_this"],"deferredProps":{"default":["deep_merge_this_d","not_this_d","merge_this_d"]}}</body></html>
+<html><head><!-- inertia head --></head><body>{"component":"Mergeable","props":{"deep_merge_this":"deep thinking","merge_this":"merged","not_this":"ow no","shared_test":"hello"},"url":"/mergeable","version":null,"mergeProps":["merge_this_d","merge_this"],"deepMergeProps":["deep_merge_this_d","deep_merge_this"],"deferredProps":{"default":["deep_merge_this_d","not_this_d","merge_this_d"]},"clearHistory":false,"encryptHistory":false}</body></html>
 
 
 test: mergeable props
@@ -157,9 +179,11 @@ GET: /mergeable
 200 OK
 [Vary: X-Inertia
  X-Inertia: true
- Content-Type: application/json]
+ Content-Type: application/json
+ Set-Cookie: XSRF-TOKEN=AGWN2wm014xNNb4X96DT9aCeA_D4Pl6Lorj9SvwTnkKwKaFehzvwvTwQs-dVo-LBEAWxe7P74sjq-0TnBUIMTW9o08n-NOBDzfAeHDSopG4PHvzUCWHFYO7Cvu5A6UEXq1BIIniZJz4lZNdEsjCzKG4sSAM61go1zQjSubcOhR9KoM49m8vYPy8; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=0Luk5iBCJ-iVX1WmIAADfgFeW; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
-{"component":"Mergeable","props":{"deep_merge_this":"deep thinking","merge_this":"merged","not_this":"ow no","shared_test":"hello"},"url":"/mergeable","version":null,"mergeProps":["merge_this_d","merge_this"],"deepMergeProps":["deep_merge_this_d","deep_merge_this"],"deferredProps":{"default":["deep_merge_this_d","not_this_d","merge_this_d"]}}
+{"component":"Mergeable","props":{"deep_merge_this":"deep thinking","merge_this":"merged","not_this":"ow no","shared_test":"hello"},"url":"/mergeable","version":null,"mergeProps":["merge_this_d","merge_this"],"deepMergeProps":["deep_merge_this_d","deep_merge_this"],"deferredProps":{"default":["deep_merge_this_d","not_this_d","merge_this_d"]},"clearHistory":false,"encryptHistory":false}
 
 
 test: default load props
@@ -172,9 +196,11 @@ GET: /loading
 200 OK
 [Vary: X-Inertia
  X-Inertia: true
- Content-Type: application/json]
+ Content-Type: application/json
+ Set-Cookie: XSRF-TOKEN=AFqtOL0ioXmdERGnRimntEFkvnY6CFOTSeqph5T4bRv9rtVwxvufifhxpZpArpFbIR2l91yESq94lODQsvs_PoT1gVouwelSyVbHxCNGvPeMr8MABmt57qHaE3hAWyip4GJEGuA9q8xH5mKsuF97ZWCkeQZ_V2HkJC1QjSyOwZN4ixdRMcO2HRM; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=0c2LEeRZstg3xGbNdRpeDr0ac; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
-{"component":"Loading","props":{"always":"always","default":"default","shared_test":"hello"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{"default":["defer"]}}
+{"component":"Loading","props":{"always":"always","default":"default","shared_test":"hello"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{"default":["defer"]},"clearHistory":false,"encryptHistory":false}
 
 
 test: load partial optional
@@ -189,9 +215,11 @@ GET: /loading
 200 OK
 [Vary: X-Inertia
  X-Inertia: true
- Content-Type: application/json]
+ Content-Type: application/json
+ Set-Cookie: XSRF-TOKEN=AJ6RJG5L-ksrXMk1uOIvX84DIqOQbtj5NnfdM5J1ipDA3aqe5_3CgV1SgiDmIx4baxbAAWfduyIoFprwn-NTEU53uE-nu-KEtFLxRErK5RE3IOTqHJSsr_03qj1kVJWzDgX2MyRiNrSNAePio7XnP2PlK4djGpaNqRJ5nvPkWGBMtDdAk3mX0QM; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=06mxPLf5G-GHL5J7sai7EYWke; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
-{"component":"Loading","props":{"always":"always","optional":"optional"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{}}
+{"component":"Loading","props":{"always":"always","optional":"optional"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{},"clearHistory":false,"encryptHistory":false}
 
 
 test: load partial without optional
@@ -206,9 +234,11 @@ GET: /loading
 200 OK
 [Vary: X-Inertia
  X-Inertia: true
- Content-Type: application/json]
+ Content-Type: application/json
+ Set-Cookie: XSRF-TOKEN=AExHb6a6Rj2HgDky4tDSKhywvvJWhI2jl3Uf4H_uAwrVkORFRl1kuqJtpCRc1nCqcEVHNEoHoyNSVXAJFFxd0jrMU4KvJXWRbTjmh67lGgRQZWZuZlUoNwDPf2ml1qgX7ftWI4eAeJneMjWTHmuGKKafaHp-ouTBMIsxHTGFpXAsaf-JX10x2rU; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=0PPzSx0-HdTGw-xuzNmUnnKjp; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
-{"component":"Loading","props":{"always":"always","default":"default"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{}}
+{"component":"Loading","props":{"always":"always","default":"default"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{},"clearHistory":false,"encryptHistory":false}
 
 
 test: load partial with wrong component
@@ -223,8 +253,44 @@ GET: /loading
 200 OK
 [Vary: X-Inertia
  X-Inertia: true
- Content-Type: application/json]
+ Content-Type: application/json
+ Set-Cookie: XSRF-TOKEN=AJQlzVuTEzKiwdOCxxnR3K6J1vuYQRHXsPjtNMAK6lNPf8CmrohCH4XkLqKuAQUF2l10O3SsZxey-zPccPydq_ZcKbH-gW4BwIffGCNcvQ9dbxr-75EiCYhI3FMg-5Pm15VmVpoCmCsh8O8pIXE8FNE1AvL8VU9QjITmi4BJeIjbcH6yeETbf3k; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=0weuV7eY3An7ngbuggcaZtj_2; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
 
-{"component":"Loading","props":{"always":"always","default":"default","shared_test":"hello"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{"default":["defer"]}}
+{"component":"Loading","props":{"always":"always","default":"default","shared_test":"hello"},"url":"/loading","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{"default":["defer"]},"clearHistory":false,"encryptHistory":false}
+
+
+test: encrypt history
+--- request ---
+GET: /
+[Accept: text/html, application/xhtml+xml
+ X-Inertia: true]
+
+--- response ---
+200 OK
+[Vary: X-Inertia
+ X-Inertia: true
+ Content-Type: application/json
+ Set-Cookie: XSRF-TOKEN=AMHrTg-XmtF8pfkoDNUdiXE1JPHPchtJIQ1KPZr9D2RGaR0CWtvySoTN1RNE_JHfHazK3C3VF5I0Rm7M7lJrMwaBgip7QZLaWGpwwvYpHUe4A8__LvdTMPchGsoEjQ8qCcJ464lu90d0PJTNHH-rR0Mu6bmcHGO3bu8EaU7hR6-vgRztF1gh6BM; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=0zMPLBgUA1i6INoD3HGD18Hiq; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
+
+{"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{},"clearHistory":false,"encryptHistory":true}
+
+
+test: clear history
+--- request ---
+GET: /clear-history
+[Accept: text/html, application/xhtml+xml
+ X-Inertia: true]
+
+--- response ---
+200 OK
+[Vary: X-Inertia
+ X-Inertia: true
+ Content-Type: application/json
+ Set-Cookie: XSRF-TOKEN=AAA6_FUiTfFeoiOFNp2TSHRntzTPpP58GWpmF_8Y3weOnb5EYbn78tOhsU6xFJ3J_Y2SBD1CYKCXW33e-qcQgOfHE2AC1OLCQynMPmKFAQd3KUfg3tFBt0npidgEH16ruLks-VTQfjqnVKKe5StHoNrEVMzncXjTv-7tBTHXwjF0nNHOHxGA-gI; Path=/; HttpOnly; SameSite=Lax
+ Set-Cookie: dream.session=0gwlYRH81bAXk-aZlVOVhe48h; Max-Age=1209599; Path=/; HttpOnly; SameSite=Lax]
+
+{"component":"Test","props":{"shared_test":"hello"},"url":"/clear-history","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{},"clearHistory":true,"encryptHistory":true}
 
 

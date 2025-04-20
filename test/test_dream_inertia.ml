@@ -81,8 +81,19 @@ struct
         ]
   ;;
 
-  let routes =
+  let handler_clear_history request =
+    Inertia.render request ~component:"Test" ~clear_history:true
+  ;;
+
+  let encrypt encrypt_history =
+    if encrypt_history then Dream_inertia.encrypt_history else Dream.no_middleware
+  ;;
+
+  let routes ?(encrypt_history = false) =
     describe_middleware
+    @@ Dream.memory_sessions
+    @@ Dream_inertia.inertia
+    @@ encrypt encrypt_history
     @@ Dream.router
          [ Dream.get "/" handler
          ; Dream.post "/" handler_redirect
@@ -93,6 +104,7 @@ struct
          ; Dream.get "/location" handler_location
          ; Dream.get "/mergeable" handler_mergeable
          ; Dream.get "/loading" handler_loading
+         ; Dream.get "/clear-history" handler_clear_history
          ]
   ;;
 end
@@ -195,5 +207,13 @@ let () =
     (Dream.request
        ~target:"/loading"
        ~headers:(inertia_header ~inertia:true ~partial:[ "default" ] ~component:"Test" ())
-       "")
+       "");
+  test
+    "encrypt history"
+    (NoVersionServer.routes ~encrypt_history:true)
+    (Dream.request ~target:"/" ~headers:(inertia_header ~inertia:true ()) "");
+  test
+    "clear history"
+    (NoVersionServer.routes ~encrypt_history:true)
+    (Dream.request ~target:"/clear-history" ~headers:(inertia_header ~inertia:true ()) "")
 ;;

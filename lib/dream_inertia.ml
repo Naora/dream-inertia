@@ -20,6 +20,7 @@ and loading_kind =
 
 type version = string option
 
+(* TODO: faire en sorte que ca utilise un field *)
 module type CONFIG = sig
   val render : head:string -> app:string -> string
   val version : unit -> version
@@ -30,6 +31,7 @@ module type INERTIA = sig
   val render
     :  component:string
     -> ?props:prop list
+    -> ?clear_history:bool
     -> Dream.request
     -> Dream.response Lwt.t
 
@@ -43,6 +45,8 @@ module Page_object = struct
     ; props : prop list
     ; url : string
     ; version : version
+    ; clear_history : bool
+    ; encrypt_history : bool
     }
 
   type requested_keys =
@@ -153,6 +157,8 @@ module Page_object = struct
       ; "mergeProps", merge_props
       ; "deepMergeProps", deep_merge_props
       ; "deferredProps", deferred_props
+      ; "clearHistory", `Bool t.clear_history
+      ; "encryptHistory", `Bool t.encrypt_history
       ]
     in
     Lwt.return (`Assoc json)
@@ -163,6 +169,10 @@ module Page_object = struct
     Lwt.return (Yojson.Safe.to_string y)
   ;;
 end
+
+let encrypt_history_field =
+  Dream.new_field ~name:"encrypt_history" ~show_value:(fun f -> string_of_bool f) ()
+;;
 
 module Make (Config : CONFIG) : INERTIA = struct
   type partial_reload_data =
@@ -220,7 +230,10 @@ module Make (Config : CONFIG) : INERTIA = struct
       else respond_with_json po (Partial requested_keys)
   ;;
 
-  let render ~component ?(props = []) request =
+  let render ~component ?(props = []) ?(clear_history = false) request =
+    let encrypt_history =
+      Dream.field request encrypt_history_field |> Option.value ~default:false
+    in
     let po =
       Page_object.
         { component
@@ -228,6 +241,8 @@ module Make (Config : CONFIG) : INERTIA = struct
         ; props
         ; url = Dream.target request
         ; version = Config.version ()
+        ; clear_history
+        ; encrypt_history
         }
     in
     match Page_object.is_version_stale po request, Dream.method_ request with
@@ -247,3 +262,24 @@ let prop ?(merge = No_merge) ?(load = Default) name resolver =
 ;;
 
 let defer ?(group = "default") = prop ~load:(Defer group)
+
+let encrypt_history inner request =
+  Dream.set_field request encrypt_history_field true;
+  inner request
+;;
+
+let inertia inner request =
+  let xsrf = Dream.header request "X-XSRF-TOKEN" in
+  let* response =
+    match xsrf with
+    | Some token ->
+      let* valid = Dream.verify_csrf_token request token in
+      (match valid with
+       | `Expired _ | `Wrong_session | `Invalid -> Dream.respond ~code:419 ""
+       | `Ok -> inner request)
+    | None -> inner request
+  in
+  let new_token = Dream.csrf_token request in
+  Dream.set_cookie response request "XSRF-TOKEN" new_token;
+  Lwt.return response
+;;

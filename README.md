@@ -10,7 +10,7 @@ TODO :
      - [x] deepMergeProps is also a thing... i need to turn the boolean into a ADT
 - [x] Add always props
 - [x] add optional props
-- [ ] Error validation on backend side  
+- [x] Error validation on backend side - Nothing to do
 - [ ] CSRF token
 - [ ] History encryption
     - page objec : 
