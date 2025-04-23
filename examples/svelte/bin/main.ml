@@ -11,17 +11,11 @@ type event =
 module Inertia = Dream_inertia.Make (struct
     let render ~head ~app = Index.render head app
     let version () = Some "3"
-
-    let shared _ =
-      let open Dream_inertia in
-      Some [ prop "user" (fun () -> Lwt.return (`String "Felicita")) ]
-    ;;
   end)
 
 type permission = { kind : string } [@@deriving yojson]
 
 let home_handler request =
-  let open Dream_inertia in
   let open Inertia in
   render
     request
@@ -66,6 +60,9 @@ let redirect_handler request =
 let () =
   Dream.run
   @@ Dream.logger
+  @@ Inertia.inertia
+  @@ Inertia.shared_props
+       [ Inertia.prop "user" (fun () -> Lwt.return (`String "Felicita")) ]
   @@ Dream.router
        [ Dream.get "/" home_handler
        ; Dream.get "/about" about_handler

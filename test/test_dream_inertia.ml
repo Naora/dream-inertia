@@ -8,11 +8,16 @@ struct
       ;;
 
       let version () = V.version
-
-      let shared _ =
-        Some [ Dream_inertia.prop "shared_test" (fun () -> Lwt.return (`String "hello")) ]
-      ;;
     end)
+
+  let strip_cookies_headers =
+    List.map (function
+      | "Set-Cookie", v when String.starts_with ~prefix:"XSRF-TOKEN" v ->
+        "Set-Cookie", "XSRF-TOKEN=XXX"
+      | "Set-Cookie", v when String.starts_with ~prefix:"dream.session" v ->
+        "Set-Cookie", "dream.session=XXX"
+      | c -> c)
+  ;;
 
   let describe_middleware handler request =
     let pp_headers =
@@ -28,7 +33,7 @@ struct
       let s = Dream.status res in
       let i = Dream.status_to_int s in
       let r = Dream.status_to_string s in
-      let h = Dream.all_headers res in
+      let h = Dream.all_headers res |> strip_cookies_headers in
       Fmt.pf ppf "--- response ---\n%d %s\n[%a]\n\n%s\n" i r pp_headers h body
     in
     let%lwt response = handler request in
@@ -42,8 +47,8 @@ struct
   let handler_location request = Inertia.location request "https://www.google.com"
 
   let handler_mergeable request =
-    let open Dream_inertia in
-    Inertia.render
+    let open Inertia in
+    render
       request
       ~component:"Mergeable"
       ~props:
@@ -59,8 +64,8 @@ struct
   ;;
 
   let handler_loading request =
-    let open Dream_inertia in
-    Inertia.render
+    let open Inertia in
+    render
       request
       ~component:"Loading"
       ~props:
@@ -72,13 +77,12 @@ struct
   ;;
 
   let handler_with_shared_data request =
-    Inertia.render
+    let open Inertia in
+    render
       request
       ~component:"Test"
       ~props:
-        [ Dream_inertia.prop "shared_test" (fun () ->
-            Lwt.return (`String "overriden shared data"))
-        ]
+        [ prop "shared_test" (fun () -> Lwt.return (`String "overriden shared data")) ]
   ;;
 
   let handler_clear_history request =
@@ -86,13 +90,15 @@ struct
   ;;
 
   let encrypt encrypt_history =
-    if encrypt_history then Dream_inertia.encrypt_history else Dream.no_middleware
+    if encrypt_history then Inertia.encrypt_history else Dream.no_middleware
   ;;
 
   let routes ?(encrypt_history = false) =
     describe_middleware
     @@ Dream.memory_sessions
-    @@ Dream_inertia.inertia
+    @@ Inertia.inertia
+    @@ Inertia.shared_props
+         [ Inertia.prop "shared_test" (fun () -> Lwt.return (`String "hello")) ]
     @@ encrypt encrypt_history
     @@ Dream.router
          [ Dream.get "/" handler

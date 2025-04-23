@@ -1,178 +1,32 @@
 open Lwt.Syntax
 
-type prop =
-  { name : string
-  ; resolver : unit -> Yojson.Safe.t Lwt.t
-  ; merging_mode : merge_kind
-  ; loading_mode : loading_kind
-  }
-
-and merge_kind =
-  | No_merge
-  | Merge
-  | Deep_merge
-
-and loading_kind =
-  | Default
-  | Defer of string
-  | Always
-  | Optional
-
-type version = string option
-
-(* TODO: faire en sorte que ca utilise un field *)
 module type CONFIG = sig
   val render : head:string -> app:string -> string
-  val version : unit -> version
-  val shared : Dream.request -> prop list option
+  val version : unit -> Page_object.version
 end
 
 module type INERTIA = sig
   val render
     :  component:string
-    -> ?props:prop list
+    -> ?props:Prop.t list
     -> ?clear_history:bool
     -> Dream.request
     -> Dream.response Lwt.t
 
   val location : Dream.request -> string -> Dream.response Lwt.t
+
+  val prop
+    :  ?merge:Prop.merge_kind
+    -> ?load:Prop.loading_kind
+    -> string
+    -> Prop.resolver
+    -> Prop.t
+
+  val defer : ?group:string -> ?merge:Prop.merge_kind -> string -> Prop.resolver -> Prop.t
+  val encrypt_history : Dream.middleware
+  val shared_props : Prop.t list -> Dream.middleware
+  val inertia : Dream.middleware
 end
-
-module Page_object = struct
-  type t =
-    { component : string
-    ; shared : prop list option
-    ; props : prop list
-    ; url : string
-    ; version : version
-    ; clear_history : bool
-    ; encrypt_history : bool
-    }
-
-  type requested_keys =
-    | All
-    | Partial of string list
-
-  let is_version_stale t request =
-    match Dream.header request "X-Inertia-Version", t.version with
-    | Some rv, Some pv -> rv <> pv
-    | _, _ -> false
-  ;;
-
-  let all_props t =
-    Lwt_list.filter_map_p
-      (fun { name; resolver; loading_mode; _ } ->
-        match loading_mode with
-        | Optional | Defer _ -> Lwt.return_none
-        | Always | Default ->
-          let* v = resolver () in
-          Lwt.return_some (name, v))
-      t.props
-  ;;
-
-  let find_props_by_key t keys =
-    Lwt_list.filter_map_p
-      (fun { name; resolver; loading_mode; _ } ->
-        if List.exists (fun l -> l = name || loading_mode = Always) keys
-        then
-          let* v = resolver () in
-          Lwt.return_some (name, v)
-        else Lwt.return_none)
-      t.props
-  ;;
-
-  let merge_shared_props t =
-    match t.shared with
-    | Some s ->
-      let props =
-        List.sort_uniq (fun a b -> String.compare a.name b.name) (t.props @ s)
-      in
-      { t with props }
-    | None -> t
-  ;;
-
-  let json_of_props t keys =
-    let t = merge_shared_props t in
-    let* props =
-      match keys with
-      | All -> all_props t
-      | Partial keys -> find_props_by_key t keys
-    in
-    Lwt.return @@ `Assoc props
-  ;;
-
-  let json_of_deferred_props_by_group t =
-    let groups = Hashtbl.create 32 in
-    List.iter
-      (fun { name; loading_mode; _ } ->
-        match loading_mode with
-        | Defer group ->
-          (match Hashtbl.find_opt groups group with
-           | None -> Hashtbl.add groups group [ name ]
-           | Some g -> Hashtbl.replace groups group (name :: g))
-        | Always | Default | Optional -> ())
-      t.props;
-    let g =
-      Hashtbl.fold
-        (fun name props acc ->
-          let p = List.map (fun p -> `String p) props in
-          (name, `List p) :: acc)
-        groups
-        []
-    in
-    `Assoc g
-  ;;
-
-  let json_of_mergeable_props t =
-    let m, d =
-      List.fold_left
-        (fun (p, d) { name; merging_mode; _ } ->
-          match merging_mode with
-          | No_merge -> p, d
-          | Merge -> `String name :: p, d
-          | Deep_merge -> p, `String name :: d)
-        ([], [])
-        t.props
-    in
-    `List m, `List d
-  ;;
-
-  let json_of_version t =
-    t.version |> Option.map (fun v -> `String v) |> Option.value ~default:`Null
-  ;;
-
-  let to_json t keys =
-    let* props = json_of_props t keys in
-    let merge_props, deep_merge_props = json_of_mergeable_props t in
-    let deferred_props =
-      match keys with
-      | All -> json_of_deferred_props_by_group t
-      | Partial _ -> `Assoc []
-    in
-    let json =
-      [ "component", `String t.component
-      ; "props", props
-      ; "url", `String t.url
-      ; "version", json_of_version t
-      ; "mergeProps", merge_props
-      ; "deepMergeProps", deep_merge_props
-      ; "deferredProps", deferred_props
-      ; "clearHistory", `Bool t.clear_history
-      ; "encryptHistory", `Bool t.encrypt_history
-      ]
-    in
-    Lwt.return (`Assoc json)
-  ;;
-
-  let to_string t keys =
-    let* y = to_json t keys in
-    Lwt.return (Yojson.Safe.to_string y)
-  ;;
-end
-
-let encrypt_history_field =
-  Dream.new_field ~name:"encrypt_history" ~show_value:(fun f -> string_of_bool f) ()
-;;
 
 module Make (Config : CONFIG) : INERTIA = struct
   type partial_reload_data =
@@ -180,6 +34,7 @@ module Make (Config : CONFIG) : INERTIA = struct
     ; component : string
     }
 
+  (*TODO: bouger ca dans le middleware. Permet de reduire le nombre d'evaluation de request_kind *)
   type request_kind =
     | Initial_load
     | Inertia_request
@@ -230,14 +85,51 @@ module Make (Config : CONFIG) : INERTIA = struct
       else respond_with_json po (Partial requested_keys)
   ;;
 
+  let location request target =
+    match request_kind request with
+    | Initial_load -> Dream.redirect request target
+    | _ -> Dream.respond ~status:`Conflict ~headers:[ "X-Inertia-Location", target ] ""
+  ;;
+
+  let prop ?(merge = Prop.No_merge) ?(load = Prop.Default) name resolver =
+    Prop.{ name; merging_mode = merge; resolver; loading_mode = load }
+  ;;
+
+  let defer ?(group = "default") = prop ~load:(Defer group)
+
+  let shared_props_field =
+    Dream.new_field
+      ~name:"shared_props"
+      ~show_value:(fun p -> Fmt.str "%a" (Fmt.list Prop.pp) p)
+      ()
+  ;;
+
+  let shared_props props inner request =
+    Dream.set_field request shared_props_field props;
+    inner request
+  ;;
+
+  let encrypt_history_field =
+    Dream.new_field ~name:"encrypt_history" ~show_value:(fun f -> string_of_bool f) ()
+  ;;
+
+  let encrypt_history inner request =
+    Dream.set_field request encrypt_history_field true;
+    inner request
+  ;;
+
   let render ~component ?(props = []) ?(clear_history = false) request =
     let encrypt_history =
       Dream.field request encrypt_history_field |> Option.value ~default:false
     in
+    let props =
+      Dream.field request shared_props_field
+      |> Option.map (fun s -> Prop.merge_props ~from:s ~into:props)
+      |> Option.value ~default:props
+    in
     let po =
       Page_object.
         { component
-        ; shared = Config.shared request
         ; props
         ; url = Dream.target request
         ; version = Config.version ()
@@ -250,36 +142,19 @@ module Make (Config : CONFIG) : INERTIA = struct
     | _, _ -> respond po request
   ;;
 
-  let location request target =
-    match request_kind request with
-    | Initial_load -> Dream.redirect request target
-    | _ -> Dream.respond ~status:`Conflict ~headers:[ "X-Inertia-Location", target ] ""
+  let inertia inner request =
+    let xsrf = Dream.header request "X-XSRF-TOKEN" in
+    let* response =
+      match xsrf with
+      | Some token ->
+        let* valid = Dream.verify_csrf_token request token in
+        (match valid with
+         | `Expired _ | `Wrong_session | `Invalid -> Dream.respond ~code:419 ""
+         | `Ok -> inner request)
+      | None -> inner request
+    in
+    let new_token = Dream.csrf_token request in
+    Dream.set_cookie response request "XSRF-TOKEN" new_token;
+    Lwt.return response
   ;;
 end
-
-let prop ?(merge = No_merge) ?(load = Default) name resolver =
-  { name; merging_mode = merge; resolver; loading_mode = load }
-;;
-
-let defer ?(group = "default") = prop ~load:(Defer group)
-
-let encrypt_history inner request =
-  Dream.set_field request encrypt_history_field true;
-  inner request
-;;
-
-let inertia inner request =
-  let xsrf = Dream.header request "X-XSRF-TOKEN" in
-  let* response =
-    match xsrf with
-    | Some token ->
-      let* valid = Dream.verify_csrf_token request token in
-      (match valid with
-       | `Expired _ | `Wrong_session | `Invalid -> Dream.respond ~code:419 ""
-       | `Ok -> inner request)
-    | None -> inner request
-  in
-  let new_token = Dream.csrf_token request in
-  Dream.set_cookie response request "XSRF-TOKEN" new_token;
-  Lwt.return response
-;;
