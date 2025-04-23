@@ -25,39 +25,10 @@ module type INERTIA = sig
   val defer : ?group:string -> ?merge:Prop.merge_kind -> string -> Prop.resolver -> Prop.t
   val encrypt_history : Dream.middleware
   val shared_props : Prop.t list -> Dream.middleware
-  val inertia : Dream.middleware
+  val inertia : ?props:Prop.t list -> Dream.middleware
 end
 
 module Make (Config : CONFIG) : INERTIA = struct
-  type partial_reload_data =
-    { requested_keys : string list
-    ; component : string
-    }
-
-  (*TODO: bouger ca dans le middleware. Permet de reduire le nombre d'evaluation de request_kind *)
-  type request_kind =
-    | Initial_load
-    | Inertia_request
-    | Inertia_partial_request of partial_reload_data
-
-  let get_data_keys data_keys =
-    String.split_on_char ',' data_keys
-    |> List.filter_map (fun s ->
-      match s |> String.trim with
-      | "" -> None
-      | _ as r -> Some r)
-  ;;
-
-  let request_kind request =
-    let h = Dream.header request in
-    match h "X-Inertia", h "X-Inertia-Partial-Data", h "X-Inertia-Partial-Component" with
-    | Some "true", Some keys, Some component ->
-      let requested_keys = get_data_keys keys in
-      Inertia_partial_request { requested_keys; component }
-    | Some "true", _, _ -> Inertia_request
-    | _, _, _ -> Initial_load
-  ;;
-
   let respond_with_conflict url =
     let headers = [ "X-Inertia-Location", url ] in
     Dream.respond ~status:`Conflict ~headers ""
@@ -76,7 +47,7 @@ module Make (Config : CONFIG) : INERTIA = struct
   ;;
 
   let respond po request =
-    match request_kind request with
+    match Context.request_kind request with
     | Initial_load -> respond_with_html po
     | Inertia_request -> respond_with_json po All
     | Inertia_partial_request { component; requested_keys } ->
@@ -86,7 +57,7 @@ module Make (Config : CONFIG) : INERTIA = struct
   ;;
 
   let location request target =
-    match request_kind request with
+    match Context.request_kind request with
     | Initial_load -> Dream.redirect request target
     | _ -> Dream.respond ~status:`Conflict ~headers:[ "X-Inertia-Location", target ] ""
   ;;
@@ -97,33 +68,20 @@ module Make (Config : CONFIG) : INERTIA = struct
 
   let defer ?(group = "default") = prop ~load:(Defer group)
 
-  let shared_props_field =
-    Dream.new_field
-      ~name:"shared_props"
-      ~show_value:(fun p -> Fmt.str "%a" (Fmt.list Prop.pp) p)
-      ()
-  ;;
-
   let shared_props props inner request =
-    Dream.set_field request shared_props_field props;
+    Context.set_shared_props request props;
     inner request
   ;;
 
-  let encrypt_history_field =
-    Dream.new_field ~name:"encrypt_history" ~show_value:(fun f -> string_of_bool f) ()
-  ;;
-
   let encrypt_history inner request =
-    Dream.set_field request encrypt_history_field true;
+    Context.set_encrypt_history request true;
     inner request
   ;;
 
   let render ~component ?(props = []) ?(clear_history = false) request =
-    let encrypt_history =
-      Dream.field request encrypt_history_field |> Option.value ~default:false
-    in
+    let context = Dream.field request Context.field |> Option.get in
     let props =
-      Dream.field request shared_props_field
+      context.shared
       |> Option.map (fun s -> Prop.merge_props ~from:s ~into:props)
       |> Option.value ~default:props
     in
@@ -134,7 +92,7 @@ module Make (Config : CONFIG) : INERTIA = struct
         ; url = Dream.target request
         ; version = Config.version ()
         ; clear_history
-        ; encrypt_history
+        ; encrypt_history = context.encrypt_history
         }
     in
     match Page_object.is_version_stale po request, Dream.method_ request with
@@ -142,7 +100,9 @@ module Make (Config : CONFIG) : INERTIA = struct
     | _, _ -> respond po request
   ;;
 
-  let inertia inner request =
+  let inertia ?props inner request =
+    let context = Context.create request props in
+    Dream.set_field request Context.field context;
     let xsrf = Dream.header request "X-XSRF-TOKEN" in
     let* response =
       match xsrf with

@@ -24,14 +24,6 @@ let is_version_stale t request =
 let all_props t = Lwt_list.filter_map_p Prop.resolve_prop t.props
 let find_props_by_key t keys = Lwt_list.filter_map_p (Prop.resolve_partial keys) t.props
 
-(* let merge_shared_props t =
-  match t.shared with
-  | Some s ->
-    let props = Prop.merge_props ~from:s ~into:t.props in
-    { t with props }
-  | None -> t
-;; *)
-
 let json_of_props t keys =
   (*   let t = merge_shared_props t in *)
   let* props =
