@@ -13,8 +13,6 @@
 
 (license MIT)
 
-(documentation https://url/to/documentation)
-
 (package
  (name dream_inertia)
  (synopsis "Inertia protocol for OCaml Dream")

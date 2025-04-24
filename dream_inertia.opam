@@ -8,7 +8,6 @@ authors: ["Joris Gundermann"]
 license: "MIT"
 tags: ["topics" "inertia" "dream" "protocol" "web"]
 homepage: "https://github.com/Naora/dream-inertia"
-doc: "https://url/to/documentation"
 bug-reports: "https://github.com/Naora/dream-inertia/issues"
 depends: [
   "ocaml"

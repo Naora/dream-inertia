@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    nix-overlays.url = "github:Naora/nix-overlays";
+    nix-overlays.url = "github:nix-ocaml/nix-overlays";
   };
 
   outputs = inputs@{ self, nixpkgs, flake-parts, nix-overlays, ... }: 
@@ -28,7 +28,7 @@
           nativeBuildInputs = with pkgs; [
             nodejs
           ];
-          buildInputs = [
+          propagatedBuildInputs = [
             ocamlPackages.dream
             ocamlPackages.fmt
             ocamlPackages.yojson
