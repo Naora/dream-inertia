@@ -6,7 +6,7 @@ description:
 maintainer: ["Joris Gundermann"]
 authors: ["Joris Gundermann"]
 license: "MIT"
-tags: ["topics" "inertia" "dream" "protocol" "web"]
+tags: ["inertia" "dream" "protocol" "web"]
 homepage: "https://github.com/Naora/dream-inertia"
 bug-reports: "https://github.com/Naora/dream-inertia/issues"
 depends: [

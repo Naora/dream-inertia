@@ -19,6 +19,6 @@
  (description "Server side implementation of the Inertia protocol for OCaml Dream web framework")
  (depends ocaml dream fmt yojson ppx_yojson_conv dune)
  (tags
-  (topics inertia dream protocol web)))
+  (inertia dream protocol web)))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
