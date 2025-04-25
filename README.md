@@ -11,11 +11,12 @@ TODO :
 - [x] Add always props
 - [x] add optional props
 - [x] Error validation on backend side - Nothing to do
-- [ ] CSRF token
-- [ ] History encryption
+- [x] CSRF token
+- [x] History encryption
     - page objec : 
         - EncryptHistory bool
         - ClearHistory bool
+- [ ] SSR
 
 
 - what happen when there are defer and prop that collision with there names ?
