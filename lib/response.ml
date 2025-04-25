@@ -73,3 +73,30 @@ let to_string keys t =
   let* y = to_json keys t in
   Lwt.return (Yojson.Safe.to_string y)
 ;;
+
+let respond_with_conflict url =
+  let headers = [ "X-Inertia-Location", url ] in
+  Dream.respond ~status:`Conflict ~headers ""
+;;
+
+let respond_with_json keys t =
+  let headers = [ "Vary", "X-Inertia"; "X-Inertia", "true" ] in
+  let* json = to_string keys t in
+  Dream.json ~headers json
+;;
+
+let respond_with_html render t =
+  let* app = to_string All t in
+  let head = "<!-- inertia head -->" in
+  Dream.html @@ render ~head ~app
+;;
+
+let respond ~render request t =
+  match Context.request_kind request with
+  | Initial_load -> respond_with_html render t
+  | Inertia_request -> respond_with_json All t
+  | Inertia_partial_request { component; requested_keys } ->
+    if component <> t.component
+    then respond_with_json All t
+    else respond_with_json (Partial requested_keys) t
+;;

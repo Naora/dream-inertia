@@ -1,20 +1,12 @@
 open Lwt.Syntax
 
 module type CONFIG = sig
+  (* add a page type with head and app *)
   val render : head:string -> app:string -> string
   val version : unit -> string option
 end
 
 module type INERTIA = sig
-  val render
-    :  component:string
-    -> ?props:Prop.t list
-    -> ?clear_history:bool
-    -> Dream.request
-    -> Dream.response Lwt.t
-
-  val location : Dream.request -> string -> Dream.response Lwt.t
-
   val prop
     :  ?merge:Prop.merge_kind
     -> ?load:Prop.loading_kind
@@ -23,38 +15,26 @@ module type INERTIA = sig
     -> Prop.t
 
   val defer : ?group:string -> ?merge:Prop.merge_kind -> string -> Prop.resolver -> Prop.t
+
+  val render
+    :  component:string
+    -> ?props:Prop.t list
+    -> ?clear_history:bool
+    -> Dream.request
+    -> Dream.response Lwt.t
+
+  val location : Dream.request -> string -> Dream.response Lwt.t
   val encrypt_history : Dream.middleware
   val shared_props : Prop.t list -> Dream.middleware
   val inertia : ?props:Prop.t list -> Dream.middleware
 end
 
 module Make (Config : CONFIG) : INERTIA = struct
-  let respond_with_conflict url =
-    let headers = [ "X-Inertia-Location", url ] in
-    Dream.respond ~status:`Conflict ~headers ""
+  let prop ?(merge = Prop.No_merge) ?(load = Prop.Default) name resolver =
+    Prop.{ name; merging_mode = merge; resolver; loading_mode = load }
   ;;
 
-  let respond_with_json po keys =
-    let headers = [ "Vary", "X-Inertia"; "X-Inertia", "true" ] in
-    let* json = Page_object.to_string keys po in
-    Dream.json ~headers json
-  ;;
-
-  let respond_with_html po =
-    let* app = Page_object.to_string All po in
-    let head = "<!-- inertia head -->" in
-    Dream.html @@ Config.render ~app ~head
-  ;;
-
-  let respond po request =
-    match Context.request_kind request with
-    | Initial_load -> respond_with_html po
-    | Inertia_request -> respond_with_json po All
-    | Inertia_partial_request { component; requested_keys } ->
-      if component <> po.component
-      then respond_with_json po All
-      else respond_with_json po (Partial requested_keys)
-  ;;
+  let defer ?(group = "default") = prop ~load:(Defer group)
 
   let location request target =
     match Context.request_kind request with
@@ -62,11 +42,35 @@ module Make (Config : CONFIG) : INERTIA = struct
     | _ -> Dream.respond ~status:`Conflict ~headers:[ "X-Inertia-Location", target ] ""
   ;;
 
-  let prop ?(merge = Prop.No_merge) ?(load = Prop.Default) name resolver =
-    Prop.{ name; merging_mode = merge; resolver; loading_mode = load }
+  let is_version_stale request version =
+    match Dream.header request "X-Inertia-Version", version with
+    | Some rv, Some pv -> rv <> pv
+    | _, _ -> false
   ;;
 
-  let defer ?(group = "default") = prop ~load:(Defer group)
+  let render ~component ?(props = []) ?(clear_history = false) request =
+    let props =
+      Context.shared_props request
+      |> Option.map (fun s -> Prop.merge_props ~from:s ~into:props)
+      |> Option.value ~default:props
+    in
+    let version = Config.version () in
+    let url = Dream.target request in
+    match is_version_stale request version, Dream.method_ request with
+    | true, `GET -> Response.respond_with_conflict url
+    | _, _ ->
+      Response.respond
+        ~render:Config.render
+        request
+        Response.
+          { component
+          ; props
+          ; url
+          ; version
+          ; clear_history
+          ; encrypt_history = Context.encrypt_history request
+          }
+  ;;
 
   let shared_props props inner request =
     Context.set_shared_props request props;
@@ -78,27 +82,6 @@ module Make (Config : CONFIG) : INERTIA = struct
     inner request
   ;;
 
-  let render ~component ?(props = []) ?(clear_history = false) request =
-    let props =
-      Context.shared_props request
-      |> Option.map (fun s -> Prop.merge_props ~from:s ~into:props)
-      |> Option.value ~default:props
-    in
-    let po =
-      Page_object.
-        { component
-        ; props
-        ; url = Dream.target request
-        ; version = Config.version ()
-        ; clear_history
-        ; encrypt_history = Context.encrypt_history request
-        }
-    in
-    match Page_object.is_version_stale request po, Dream.method_ request with
-    | true, `GET -> respond_with_conflict po.url
-    | _, _ -> respond po request
-  ;;
-
   let inertia ?props inner request =
     Context.create request props;
     let xsrf = Dream.header request "X-XSRF-TOKEN" in
@@ -108,7 +91,7 @@ module Make (Config : CONFIG) : INERTIA = struct
         let* valid = Dream.verify_csrf_token request token in
         (match valid with
          | `Expired _ | `Wrong_session | `Invalid ->
-           respond_with_conflict @@ Dream.target request
+           Response.respond_with_conflict @@ Dream.target request
          | `Ok -> inner request)
       | None -> inner request
     in
