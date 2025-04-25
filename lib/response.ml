@@ -13,12 +13,6 @@ type requested_keys =
   | All
   | Partial of string list
 
-let is_version_stale request t =
-  match Dream.header request "X-Inertia-Version", t.version with
-  | Some rv, Some pv -> rv <> pv
-  | _, _ -> false
-;;
-
 let all_props t = Lwt_list.filter_map_p Prop.resolve_prop t.props
 let find_props_by_key keys t = Lwt_list.filter_map_p (Prop.resolve_partial keys) t.props
 
