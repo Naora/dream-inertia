@@ -2,7 +2,7 @@ open Lwt.Syntax
 
 module type CONFIG = sig
   val render : head:string -> app:string -> string
-  val version : unit -> Page_object.version
+  val version : unit -> string option
 end
 
 module type INERTIA = sig
@@ -36,12 +36,12 @@ module Make (Config : CONFIG) : INERTIA = struct
 
   let respond_with_json po keys =
     let headers = [ "Vary", "X-Inertia"; "X-Inertia", "true" ] in
-    let* json = Page_object.to_string po keys in
+    let* json = Page_object.to_string keys po in
     Dream.json ~headers json
   ;;
 
   let respond_with_html po =
-    let* app = Page_object.to_string po All in
+    let* app = Page_object.to_string All po in
     let head = "<!-- inertia head -->" in
     Dream.html @@ Config.render ~app ~head
   ;;
@@ -79,9 +79,8 @@ module Make (Config : CONFIG) : INERTIA = struct
   ;;
 
   let render ~component ?(props = []) ?(clear_history = false) request =
-    let context = Dream.field request Context.field |> Option.get in
     let props =
-      context.shared
+      Context.shared_props request
       |> Option.map (fun s -> Prop.merge_props ~from:s ~into:props)
       |> Option.value ~default:props
     in
@@ -92,24 +91,24 @@ module Make (Config : CONFIG) : INERTIA = struct
         ; url = Dream.target request
         ; version = Config.version ()
         ; clear_history
-        ; encrypt_history = context.encrypt_history
+        ; encrypt_history = Context.encrypt_history request
         }
     in
-    match Page_object.is_version_stale po request, Dream.method_ request with
+    match Page_object.is_version_stale request po, Dream.method_ request with
     | true, `GET -> respond_with_conflict po.url
     | _, _ -> respond po request
   ;;
 
   let inertia ?props inner request =
-    let context = Context.create request props in
-    Dream.set_field request Context.field context;
+    Context.create request props;
     let xsrf = Dream.header request "X-XSRF-TOKEN" in
     let* response =
       match xsrf with
       | Some token ->
         let* valid = Dream.verify_csrf_token request token in
         (match valid with
-         | `Expired _ | `Wrong_session | `Invalid -> Dream.respond ~code:419 ""
+         | `Expired _ | `Wrong_session | `Invalid ->
+           respond_with_conflict @@ Dream.target request
          | `Ok -> inner request)
       | None -> inner request
     in

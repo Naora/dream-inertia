@@ -4,32 +4,29 @@ type t =
   { component : string
   ; props : Prop.t list
   ; url : string
-  ; version : version
+  ; version : string option
   ; clear_history : bool
   ; encrypt_history : bool
   }
-
-and version = string option
 
 type requested_keys =
   | All
   | Partial of string list
 
-let is_version_stale t request =
+let is_version_stale request t =
   match Dream.header request "X-Inertia-Version", t.version with
   | Some rv, Some pv -> rv <> pv
   | _, _ -> false
 ;;
 
 let all_props t = Lwt_list.filter_map_p Prop.resolve_prop t.props
-let find_props_by_key t keys = Lwt_list.filter_map_p (Prop.resolve_partial keys) t.props
+let find_props_by_key keys t = Lwt_list.filter_map_p (Prop.resolve_partial keys) t.props
 
-let json_of_props t keys =
-  (*   let t = merge_shared_props t in *)
+let json_of_props keys t =
   let* props =
     match keys with
     | All -> all_props t
-    | Partial keys -> find_props_by_key t keys
+    | Partial keys -> find_props_by_key keys t
   in
   Lwt.return @@ `Assoc props
 ;;
@@ -49,8 +46,8 @@ let json_of_version t =
   t.version |> Option.map (fun v -> `String v) |> Option.value ~default:`Null
 ;;
 
-let to_json t keys =
-  let* props = json_of_props t keys in
+let to_json keys t =
+  let* props = json_of_props keys t in
   let merge_props, deep_merge_props = json_of_mergeable_props t in
   let deferred_props =
     match keys with
@@ -72,7 +69,7 @@ let to_json t keys =
   Lwt.return (`Assoc json)
 ;;
 
-let to_string t keys =
-  let* y = to_json t keys in
+let to_string keys t =
+  let* y = to_json keys t in
   Lwt.return (Yojson.Safe.to_string y)
 ;;

@@ -20,26 +20,28 @@ and loading_kind =
   | Always
   | Optional
 
-let string_of_merging_kind = function
-  | No_merge -> "no merge"
-  | Merge -> "merge"
-  | Deep_merge -> "deep merge"
+let pp_merge_kind ppf = function
+  | No_merge -> Fmt.pf ppf "no merge"
+  | Merge -> Fmt.pf ppf "merge"
+  | Deep_merge -> Fmt.pf ppf "deep merge"
 ;;
 
-let string_of_loading_kind = function
-  | Default -> "default"
-  | Defer group -> "defer (" ^ group ^ ")"
-  | Always -> "always"
-  | Optional -> "optional"
+let pp_loading_kind ppf = function
+  | Default -> Fmt.pf ppf "default"
+  | Defer group -> Fmt.pf ppf "defer (%s)" group
+  | Always -> Fmt.pf ppf "always"
+  | Optional -> Fmt.pf ppf "optional"
 ;;
 
 let pp ppf prop =
   Fmt.pf
     ppf
-    "{name = %s; merging_mode = %s; loading_mode = %s}"
+    "{name = %s; merging_mode = %a; loading_mode = %a}"
     prop.name
-    (string_of_merging_kind prop.merging_mode)
-    (string_of_loading_kind prop.loading_mode)
+    pp_merge_kind
+    prop.merging_mode
+    pp_loading_kind
+    prop.loading_mode
 ;;
 
 let resolve_prop { name; resolver; loading_mode; _ } =
