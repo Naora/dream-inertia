@@ -11,7 +11,7 @@ homepage: "https://github.com/Naora/dream-inertia"
 bug-reports: "https://github.com/Naora/dream-inertia/issues"
 depends: [
   "ocaml"
-  "dream"
+  "dream" {>= "1.0.0~alpha8"}
   "fmt"
   "yojson"
   "ppx_yojson_conv"

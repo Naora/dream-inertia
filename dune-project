@@ -1,6 +1,6 @@
 (lang dune 3.14)
 
-(name dream_inertia)
+(name dream-inertia)
 
 (generate_opam_files true)
 
@@ -14,10 +14,16 @@
 (license MIT)
 
 (package
- (name dream_inertia)
+ (name dream-inertia)
  (synopsis "Inertia protocol for OCaml Dream")
  (description "Server side implementation of the Inertia protocol for OCaml Dream web framework")
- (depends ocaml dream fmt yojson ppx_yojson_conv dune)
+ (depends 
+   ocaml 
+   (dream (>= 1.0.0~alpha8))
+   fmt 
+   yojson 
+   ppx_yojson_conv 
+   dune)
  (tags
   (inertia dream protocol web)))
 
