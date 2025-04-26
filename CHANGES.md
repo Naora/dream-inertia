@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.0.1] - YYYY-MM-DD
+## [v0.0.1]
 
 ### Added
 

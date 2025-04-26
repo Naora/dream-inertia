@@ -25,9 +25,6 @@
         default = buildDunePackage {
           inherit version;
           pname = "dream-inertia";
-          nativeBuildInputs = with pkgs; [
-            nodejs
-          ];
           propagatedBuildInputs = [
             ocamlPackages.dream
             ocamlPackages.fmt
@@ -43,7 +40,8 @@
           inputsFrom = [
             self.packages.${system}.default
           ];
-          packages = [
+          packages = with pkgs; [
+            nodejs
             ocamlPackages.ocaml-lsp
             ocamlPackages.ocamlformat
             ocamlPackages.utop
