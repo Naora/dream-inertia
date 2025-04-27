@@ -46,6 +46,7 @@
             ocamlPackages.ocamlformat
             ocamlPackages.utop
             ocamlPackages.dune-release
+            ocamlPackages.odoc
           ];
         };
       };
