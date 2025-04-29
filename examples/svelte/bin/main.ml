@@ -8,15 +8,12 @@ type event =
   }
 [@@deriving yojson]
 
-module Inertia = Dream_inertia.Make (struct
-    let render ~head ~app = Index.render head app
-    let version () = Some "3"
-  end)
+let render page_data = Index.render @@ Dream_inertia.app page_data
 
 type permission = { kind : string } [@@deriving yojson]
 
 let home_handler request =
-  let open Inertia in
+  let open Dream_inertia in
   render
     request
     ~component:"Home"
@@ -48,21 +45,24 @@ let home_handler request =
 ;;
 
 let about_handler request =
-  let open Inertia in
+  let open Dream_inertia in
   render request ~component:"About"
 ;;
 
 let redirect_handler request =
-  let open Inertia in
+  let open Dream_inertia in
   location request "//git.jogun.me"
 ;;
 
 let () =
   Dream.run
   @@ Dream.logger
-  @@ Inertia.inertia
-  @@ Inertia.shared_props
-       [ Inertia.prop "user" (fun () -> Lwt.return (`String "Felicita")) ]
+  @@ Dream.memory_sessions
+  @@ Dream_inertia.inertia
+       ~xsrf:true
+       ~version:"3"
+       ~renderer:render
+       ~props:[ Dream_inertia.prop "user" (fun () -> Lwt.return (`String "Felicita")) ]
   @@ Dream.router
        [ Dream.get "/" home_handler
        ; Dream.get "/about" about_handler

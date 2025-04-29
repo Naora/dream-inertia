@@ -9,7 +9,7 @@ GET: /
  Set-Cookie: XSRF-TOKEN=XXX
  Set-Cookie: dream.session=XXX]
 
-<html><head><!-- inertia head --></head><body>{"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{},"clearHistory":false,"encryptHistory":false}</body></html>
+<html><body>{"component":"Test","props":{"shared_test":"hello"},"url":"/","version":null,"mergeProps":[],"deepMergeProps":[],"deferredProps":{},"clearHistory":false,"encryptHistory":false}</body></html>
 
 
 test: inertia load
@@ -166,7 +166,7 @@ GET: /mergeable
  Set-Cookie: XSRF-TOKEN=XXX
  Set-Cookie: dream.session=XXX]
 
-<html><head><!-- inertia head --></head><body>{"component":"Mergeable","props":{"shared_test":"hello","merge_this":"merged","not_this":"ow no","deep_merge_this":"deep thinking"},"url":"/mergeable","version":null,"mergeProps":["merge_this_d","merge_this"],"deepMergeProps":["deep_merge_this_d","deep_merge_this"],"deferredProps":{"default":["deep_merge_this_d","not_this_d","merge_this_d"]},"clearHistory":false,"encryptHistory":false}</body></html>
+<html><body>{"component":"Mergeable","props":{"shared_test":"hello","merge_this":"merged","not_this":"ow no","deep_merge_this":"deep thinking"},"url":"/mergeable","version":null,"mergeProps":["merge_this_d","merge_this"],"deepMergeProps":["deep_merge_this_d","deep_merge_this"],"deferredProps":{"default":["deep_merge_this_d","not_this_d","merge_this_d"]},"clearHistory":false,"encryptHistory":false}</body></html>
 
 
 test: mergeable props

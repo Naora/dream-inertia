@@ -2,13 +2,7 @@ module Server (V : sig
     val version : string option
   end) =
 struct
-  module Inertia = Dream_inertia.Make (struct
-      let render ~head ~app =
-        Fmt.str "<html><head>%s</head><body>%s</body></html>" head app
-      ;;
-
-      let version () = V.version
-    end)
+  let render data = Fmt.str "<html><body>%s</body></html>" (Dream_inertia.app data)
 
   let strip_cookies_headers =
     List.map (function
@@ -42,12 +36,12 @@ struct
     Lwt.return response
   ;;
 
-  let handler request = Inertia.render request ~component:"Test"
+  let handler request = Dream_inertia.render request ~component:"Test"
   let handler_redirect request = Dream.redirect request "/"
-  let handler_location request = Inertia.location request "https://www.google.com"
+  let handler_location request = Dream_inertia.location request "https://www.google.com"
 
   let handler_mergeable request =
-    let open Inertia in
+    let open Dream_inertia in
     render
       request
       ~component:"Mergeable"
@@ -64,7 +58,7 @@ struct
   ;;
 
   let handler_loading request =
-    let open Inertia in
+    let open Dream_inertia in
     render
       request
       ~component:"Loading"
@@ -77,7 +71,7 @@ struct
   ;;
 
   let handler_with_shared_data request =
-    let open Inertia in
+    let open Dream_inertia in
     render
       request
       ~component:"Test"
@@ -86,19 +80,22 @@ struct
   ;;
 
   let handler_clear_history request =
-    Inertia.render request ~component:"Test" ~clear_history:true
+    Dream_inertia.render request ~component:"Test" ~clear_history:true
   ;;
 
   let encrypt encrypt_history =
-    if encrypt_history then Inertia.encrypt_history else Dream.no_middleware
+    if encrypt_history then Dream_inertia.encrypt_history else Dream.no_middleware
   ;;
 
   let routes ?(encrypt_history = false) =
     describe_middleware
     @@ Dream.memory_sessions
-    @@ Inertia.inertia
-    @@ Inertia.shared_props
-         [ Inertia.prop "shared_test" (fun () -> Lwt.return (`String "hello")) ]
+    @@ Dream_inertia.inertia
+         ~xsrf:true
+         ~props:
+           [ Dream_inertia.prop "shared_test" (fun () -> Lwt.return (`String "hello")) ]
+         ?version:V.version
+         ~renderer:render
     @@ encrypt encrypt_history
     @@ Dream.router
          [ Dream.get "/" handler

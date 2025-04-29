@@ -2,6 +2,8 @@ type t =
   { inertia_mode : request_kind
   ; encrypt_history : bool
   ; shared : Prop.t list option
+  ; version : string option
+  ; render_template : page_data -> string
   }
 
 and partial_reload_data =
@@ -13,6 +15,8 @@ and request_kind =
   | Initial_load
   | Inertia_request
   | Inertia_partial_request of partial_reload_data
+
+and page_data = { app : string }
 
 let pp_partial_reload_data ppf p =
   Fmt.pf
@@ -43,11 +47,11 @@ let pp ppf t =
 
 let field = Dream.new_field ~name:"context" ~show_value:(fun c -> Fmt.str "%a" pp c) ()
 
-let create request props =
+let create ~encrypt_history ~request ~props ~version ~renderer =
   let get_data_keys data_keys =
     String.split_on_char ',' data_keys
     |> List.filter_map (fun s ->
-      match s |> String.trim with
+      match String.trim s with
       | "" -> None
       | _ as r -> Some r)
   in
@@ -60,32 +64,19 @@ let create request props =
     | Some "true", _, _ -> Inertia_request
     | _, _, _ -> Initial_load
   in
-  Dream.set_field request field { encrypt_history = false; inertia_mode; shared = props }
+  Dream.set_field
+    request
+    field
+    { encrypt_history; inertia_mode; shared = props; version; render_template = renderer }
 ;;
 
-let get_context request = Dream.field request field |> Option.get
-
-let request_kind request =
-  let context = get_context request in
-  context.inertia_mode
-;;
-
-let shared_props request =
-  let context = get_context request in
-  context.shared
-;;
-
-let set_shared_props request props =
-  let context = get_context request in
-  Dream.set_field request field { context with shared = Some props }
-;;
-
-let encrypt_history request =
-  let context = get_context request in
-  context.encrypt_history
-;;
-
-let set_encrypt_history request encrypt_history =
-  let context = get_context request in
-  Dream.set_field request field { context with encrypt_history }
-;;
+(* TODO: raise proper error *)
+let of_request request = Dream.field request field |> Option.get
+let update request t = Dream.set_field request field t
+let request_kind t = t.inertia_mode
+let shared_props t = t.shared
+let set_shared_props props t = { t with shared = Some props }
+let encrypt_history t = t.encrypt_history
+let set_encrypt_history encrypt_history t = { t with encrypt_history }
+let render page_data t = t.render_template page_data
+let app page_data = page_data.app

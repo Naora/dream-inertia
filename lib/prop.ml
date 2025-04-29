@@ -20,7 +20,9 @@ and loading_kind =
   | Always
   | Optional
 
-let create ?(merge = No_merge) ?(load = Default) name  resolver  = {name; resolver; merging_mode = merge; loading_mode = load}
+let create ?(merge = No_merge) ?(load = Default) name resolver =
+  { name; resolver; merging_mode = merge; loading_mode = load }
+;;
 
 let pp_merge_kind ppf = function
   | No_merge -> Fmt.pf ppf "no merge"
@@ -34,7 +36,6 @@ let pp_loading_kind ppf = function
   | Always -> Fmt.pf ppf "always"
   | Optional -> Fmt.pf ppf "optional"
 ;;
-
 
 let pp ppf prop =
   Fmt.pf
@@ -58,7 +59,7 @@ let resolve_props props =
     props
 ;;
 
-let resolve_props_by_keys keys props =
+let resolve_props_by_keys ~keys props =
   Lwt_list.filter_map_p
     (fun t ->
       if List.exists (fun l -> l = t.name || t.loading_mode = Always) keys

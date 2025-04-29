@@ -13,11 +13,11 @@ type requested_keys =
   | All
   | Partial of string list
 
-let json_of_props keys t =
+let json_of_props ~keys t =
   let* props =
     match keys with
     | All -> Prop.resolve_props t.props
-    | Partial keys -> Prop.resolve_props_by_keys keys t.props
+    | Partial keys -> Prop.resolve_props_by_keys ~keys t.props
   in
   Lwt.return @@ `Assoc props
 ;;
@@ -37,8 +37,8 @@ let json_of_version t =
   t.version |> Option.map (fun v -> `String v) |> Option.value ~default:`Null
 ;;
 
-let to_json keys t =
-  let* props = json_of_props keys t in
+let to_json ~keys t =
+  let* props = json_of_props ~keys t in
   let merge_props, deep_merge_props = json_of_mergeable_props t in
   let deferred_props =
     match keys with
@@ -60,8 +60,8 @@ let to_json keys t =
   Lwt.return (`Assoc json)
 ;;
 
-let to_string keys t =
-  let* y = to_json keys t in
+let to_string ~keys t =
+  let* y = to_json ~keys t in
   Lwt.return (Yojson.Safe.to_string y)
 ;;
 
@@ -70,24 +70,57 @@ let respond_with_conflict url =
   Dream.respond ~status:`Conflict ~headers ""
 ;;
 
-let respond_with_json keys t =
+let respond_with_json ~keys t =
   let headers = [ "Vary", "X-Inertia"; "X-Inertia", "true" ] in
-  let* json = to_string keys t in
+  let* json = to_string ~keys t in
   Dream.json ~headers json
 ;;
 
-let respond_with_html render t =
-  let* app = to_string All t in
-  let head = "<!-- inertia head -->" in
-  Dream.html @@ render ~head ~app
+let respond_with_html ~context t =
+  let* app = to_string ~keys:All t in
+  Dream.html @@ Context.render { app } context
 ;;
 
-let respond ~render request t =
-  match Context.request_kind request with
-  | Initial_load -> respond_with_html render t
-  | Inertia_request -> respond_with_json All t
+let respond ~context t =
+  match Context.request_kind context with
+  | Initial_load -> respond_with_html ~context t
+  | Inertia_request -> respond_with_json ~keys:All t
   | Inertia_partial_request { component; requested_keys } ->
     if component <> t.component
-    then respond_with_json All t
-    else respond_with_json (Partial requested_keys) t
+    then respond_with_json ~keys:All t
+    else respond_with_json ~keys:(Partial requested_keys) t
+;;
+
+let location request target =
+  match Context.of_request request |> Context.request_kind with
+  | Initial_load -> Dream.redirect request target
+  | _ -> Dream.respond ~status:`Conflict ~headers:[ "X-Inertia-Location", target ] ""
+;;
+
+let is_version_stale request version =
+  match Dream.header request "X-Inertia-Version", version with
+  | Some rv, Some pv -> rv <> pv
+  | _, _ -> false
+;;
+
+let render ~component ?(props = []) ?(clear_history = false) request =
+  let context = Context.of_request request in
+  let props =
+    context.shared
+    |> Option.map (fun s -> Prop.merge_props ~from:s ~into:props)
+    |> Option.value ~default:props
+  in
+  let url = Dream.target request in
+  match is_version_stale request context.version, Dream.method_ request with
+  | true, `GET -> respond_with_conflict url
+  | _, _ ->
+    respond
+      ~context
+      { component
+      ; props
+      ; url
+      ; version = context.version
+      ; clear_history
+      ; encrypt_history = context.encrypt_history
+      }
 ;;
