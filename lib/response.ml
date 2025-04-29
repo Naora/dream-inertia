@@ -13,14 +13,11 @@ type requested_keys =
   | All
   | Partial of string list
 
-let all_props t = Lwt_list.filter_map_p Prop.resolve_prop t.props
-let find_props_by_key keys t = Lwt_list.filter_map_p (Prop.resolve_partial keys) t.props
-
 let json_of_props keys t =
   let* props =
     match keys with
-    | All -> all_props t
-    | Partial keys -> find_props_by_key keys t
+    | All -> Prop.resolve_props t.props
+    | Partial keys -> Prop.resolve_props_by_keys keys t.props
   in
   Lwt.return @@ `Assoc props
 ;;

@@ -20,6 +20,8 @@ and loading_kind =
   | Always
   | Optional
 
+let create ?(merge = No_merge) ?(load = Default) name  resolver  = {name; resolver; merging_mode = merge; loading_mode = load}
+
 let pp_merge_kind ppf = function
   | No_merge -> Fmt.pf ppf "no merge"
   | Merge -> Fmt.pf ppf "merge"
@@ -33,6 +35,7 @@ let pp_loading_kind ppf = function
   | Optional -> Fmt.pf ppf "optional"
 ;;
 
+
 let pp ppf prop =
   Fmt.pf
     ppf
@@ -44,20 +47,26 @@ let pp ppf prop =
     prop.loading_mode
 ;;
 
-let resolve_prop { name; resolver; loading_mode; _ } =
-  match loading_mode with
-  | Optional | Defer _ -> Lwt.return_none
-  | Always | Default ->
-    let* v = resolver () in
-    Lwt.return_some (name, v)
+let resolve_props props =
+  Lwt_list.filter_map_p
+    (fun t ->
+      match t.loading_mode with
+      | Optional | Defer _ -> Lwt.return_none
+      | Always | Default ->
+        let* v = t.resolver () in
+        Lwt.return_some (t.name, v))
+    props
 ;;
 
-let resolve_partial keys { name; resolver; loading_mode; _ } =
-  if List.exists (fun l -> l = name || loading_mode = Always) keys
-  then
-    let* v = resolver () in
-    Lwt.return_some (name, v)
-  else Lwt.return_none
+let resolve_props_by_keys keys props =
+  Lwt_list.filter_map_p
+    (fun t ->
+      if List.exists (fun l -> l = t.name || t.loading_mode = Always) keys
+      then
+        let* v = t.resolver () in
+        Lwt.return_some (t.name, v)
+      else Lwt.return_none)
+    props
 ;;
 
 let rec merge_props ~from ~into =

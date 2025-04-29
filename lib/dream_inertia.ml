@@ -30,10 +30,7 @@ module type INERTIA = sig
 end
 
 module Make (Config : CONFIG) : INERTIA = struct
-  let prop ?(merge = Prop.No_merge) ?(load = Prop.Default) name resolver =
-    Prop.{ name; merging_mode = merge; resolver; loading_mode = load }
-  ;;
-
+  let prop = Prop.create
   let defer ?(group = "default") = prop ~load:(Defer group)
 
   let location request target =
