@@ -105,13 +105,14 @@ let is_version_stale request version =
 
 let render ~component ?(props = []) ?(clear_history = false) request =
   let context = Context.of_request request in
+  let version = Context.version context in
   let props =
-    context.shared
+    Context.shared_props context
     |> Option.map (fun s -> Prop.merge_props ~from:s ~into:props)
     |> Option.value ~default:props
   in
   let url = Dream.target request in
-  match is_version_stale request context.version, Dream.method_ request with
+  match is_version_stale request version, Dream.method_ request with
   | true, `GET -> respond_with_conflict url
   | _, _ ->
     respond
@@ -119,7 +120,7 @@ let render ~component ?(props = []) ?(clear_history = false) request =
       { component
       ; props
       ; url
-      ; version = context.version
+      ; version
       ; clear_history
       ; encrypt_history = context.encrypt_history
       }

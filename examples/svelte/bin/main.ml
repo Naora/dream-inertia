@@ -8,7 +8,7 @@ type event =
   }
 [@@deriving yojson]
 
-let render page_data = Index.render @@ Dream_inertia.app page_data
+let render page_data = Index.render @@ Dream_inertia.page_app page_data
 
 type permission = { kind : string } [@@deriving yojson]
 

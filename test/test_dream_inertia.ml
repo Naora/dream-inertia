@@ -2,7 +2,7 @@ module Server (V : sig
     val version : string option
   end) =
 struct
-  let render data = Fmt.str "<html><body>%s</body></html>" (Dream_inertia.app data)
+  let render data = Fmt.str "<html><body>%s</body></html>" (Dream_inertia.page_app data)
 
   let strip_cookies_headers =
     List.map (function

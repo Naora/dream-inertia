@@ -37,9 +37,11 @@ let pp_request_kind ppf = function
 let pp ppf t =
   Fmt.pf
     ppf
-    "{inertia_mode = %a; encrypt_history = %b; shared = %a}"
+    "{inertia_mode = %a; version = %a; encrypt_history = %b; shared = %a}"
     pp_request_kind
     t.inertia_mode
+    (Fmt.option Fmt.string)
+    t.version
     t.encrypt_history
     (Fmt.option (Fmt.list Prop.pp))
     t.shared
@@ -77,6 +79,7 @@ let request_kind t = t.inertia_mode
 let shared_props t = t.shared
 let set_shared_props props t = { t with shared = Some props }
 let encrypt_history t = t.encrypt_history
+let version t = t.version
 let set_encrypt_history encrypt_history t = { t with encrypt_history }
 let render page_data t = t.render_template page_data
-let app page_data = page_data.app
+let page_app p = p.app

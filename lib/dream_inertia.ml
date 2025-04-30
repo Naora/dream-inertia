@@ -3,7 +3,7 @@ let prop = Prop.create
 let defer ?(group = "default") = Prop.create ~load:(Defer group)
 
 (* Render helpers *)
-let app = Context.app
+let page_app = Context.page_app
 
 (* Response *)
 let location = Response.location

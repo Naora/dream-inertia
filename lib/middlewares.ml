@@ -5,8 +5,10 @@ let shared_props props inner request =
   inner request
 ;;
 
-let encrypt_history inner request =
-  Context.of_request request |> Context.set_encrypt_history true |> Context.update request;
+let encrypt_history ?(encrypt = true) inner request =
+  Context.of_request request
+  |> Context.set_encrypt_history encrypt
+  |> Context.update request;
   inner request
 ;;
 
