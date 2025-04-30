@@ -3,13 +3,15 @@ type t =
   ; encrypt_history : bool
   ; shared : Prop.t list option
   ; version : string option
-  ; render_template : page_data -> string
+  ; render_template : renderer
   }
 
 and partial_reload_data =
   { requested_keys : string list
   ; component : string
   }
+
+and renderer = page_data -> string
 
 and request_kind =
   | Initial_load

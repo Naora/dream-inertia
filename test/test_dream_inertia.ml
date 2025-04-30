@@ -83,10 +83,6 @@ struct
     Dream_inertia.render request ~component:"Test" ~clear_history:true
   ;;
 
-  let encrypt encrypt_history =
-    if encrypt_history then Dream_inertia.encrypt_history else Dream.no_middleware
-  ;;
-
   let routes ?(encrypt_history = false) =
     describe_middleware
     @@ Dream.memory_sessions
@@ -96,7 +92,7 @@ struct
            [ Dream_inertia.prop "shared_test" (fun () -> Lwt.return (`String "hello")) ]
          ?version:V.version
          ~renderer:render
-    @@ encrypt encrypt_history
+    @@ Dream_inertia.encrypt_history ~encrypt:encrypt_history
     @@ Dream.router
          [ Dream.get "/" handler
          ; Dream.post "/" handler_redirect

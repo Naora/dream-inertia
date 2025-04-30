@@ -1,3 +1,8 @@
+module Prop = Prop
+module Context = Context
+module Response = Response
+module Middlewares = Middlewares
+
 (* Property helpers *)
 let prop = Prop.create
 let defer ?(group = "default") = Prop.create ~load:(Defer group)
