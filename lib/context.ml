@@ -3,7 +3,7 @@ type t =
   ; encrypt_history : bool
   ; shared : Prop.t list option
   ; version : string option
-  ; render_template : renderer
+  ; template : Template.t
   }
 
 and partial_reload_data =
@@ -11,14 +11,10 @@ and partial_reload_data =
   ; component : string
   }
 
-and renderer = page_data -> string
-
 and request_kind =
   | Initial_load
   | Inertia_request
   | Inertia_partial_request of partial_reload_data
-
-and page_data = { app : string }
 
 let pp_partial_reload_data ppf p =
   Fmt.pf
@@ -68,10 +64,11 @@ let create ~encrypt_history ~request ~props ~version ~renderer =
     | Some "true", _, _ -> Inertia_request
     | _, _, _ -> Initial_load
   in
+  let template = Template.create renderer in
   Dream.set_field
     request
     field
-    { encrypt_history; inertia_mode; shared = props; version; render_template = renderer }
+    { encrypt_history; inertia_mode; shared = props; version; template }
 ;;
 
 (* TODO: raise proper error *)
@@ -83,5 +80,4 @@ let set_shared_props props t = { t with shared = Some props }
 let encrypt_history t = t.encrypt_history
 let version t = t.version
 let set_encrypt_history encrypt_history t = { t with encrypt_history }
-let render page_data t = t.render_template page_data
-let page_app p = p.app
+let template t = t.template

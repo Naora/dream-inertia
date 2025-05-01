@@ -2,11 +2,6 @@
     requests in a Dream web application. It includes functions for rendering
     Inertia pages, creating properties, and handling Inertia responses. *)
 
-(** {1 Types} *)
-
-(** [page_component] is a type that represents a page component. It is used to
-    identify the page to render. *)
-
 (** {1 Property helpers} *)
 
 (** [prop ?merge ?load page_component resolver] creates a property with optional merge and loading modes. The default
@@ -26,7 +21,7 @@ val defer : ?group:string -> ?merge:Prop.merge_kind -> string -> Prop.resolver -
 
 (** [page_app] is a function that takes a page data and returns the page app
     as a string. The page app is used to render the Inertia page. *)
-val page_app : Context.page_data -> string
+val page_app : Template.page_data -> string
 
 (** {1 Response} *)
 
@@ -56,13 +51,13 @@ val render
     {!Dream_inertia.inertia} middleware. *)
 val shared_props : Prop.t list -> Dream.middleware
 
-(** [Dream_inertia.encrypt_history ~encrypt] is a Dream middleware that encrypts
+(** [encrypt_history ~encrypt] is a Dream middleware that encrypts
     the Inertia history. If [encrypt] is true, the history will be encrypted.
     Otherwise, it will not be. This middleware should be used in conjunction with
     the {!Dream_inertia.inertia} middleware. *)
 val encrypt_history : ?encrypt:bool -> Dream.middleware
 
-(** [Dream_inertia.inertia ~xsrf ~encrypt_history ~props ~version ~renderer] is a
+(** [inertia ~xsrf ~encrypt_history ~props ~version ~renderer] is a
     Dream middleware that handles Inertia requests. The middleware will automatically handle Inertia requests and
     render the appropriate response based on the request kind. *)
 val inertia
@@ -70,12 +65,10 @@ val inertia
   -> ?encrypt_history:bool
   -> ?props:Prop.t list
   -> ?version:string
-  -> renderer:Context.renderer
+  -> renderer:Template.renderer
   -> Dream.middleware
 
 (** {1 Internal modules} *)
 
 module Prop = Prop
-module Context = Context
-module Response = Response
-module Middlewares = Middlewares
+module Template = Template

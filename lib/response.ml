@@ -78,7 +78,7 @@ let respond_with_json ~keys t =
 
 let respond_with_html ~context t =
   let* app = to_string ~keys:All t in
-  Dream.html @@ Context.render { app } context
+  context |> Context.template |> Template.render { app } |> Dream.html
 ;;
 
 let respond ~context t =

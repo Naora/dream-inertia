@@ -1,14 +1,12 @@
 module Prop = Prop
-module Context = Context
-module Response = Response
-module Middlewares = Middlewares
+module Template = Template
 
 (* Property helpers *)
 let prop = Prop.create
 let defer ?(group = "default") = Prop.create ~load:(Defer group)
 
 (* Render helpers *)
-let page_app = Context.page_app
+let page_app = Template.page_app
 
 (* Response *)
 let location = Response.location
