@@ -33,30 +33,28 @@ module Page_object = struct
   ;;
 
   let mergeable_props props =
-    let open Prop in
     List.fold_left
-      (fun (merge, deep_merge) { name; merging_mode; _ } ->
-        match merging_mode with
+      (fun (merge, deep_merge) p ->
+        match Prop.merging_mode p with
         | No_merge -> merge, deep_merge
-        | Merge -> name :: merge, deep_merge
-        | Deep_merge -> merge, name :: deep_merge)
+        | Merge -> Prop.name p :: merge, deep_merge
+        | Deep_merge -> merge, Prop.name p :: deep_merge)
       ([], [])
       props
   ;;
 
   let deferred_props_by_group props =
-    let open Prop in
     let rec aux acc props =
       match props with
       | [] -> acc
-      | { name; loading_mode; _ } :: t ->
-        (match loading_mode with
+      | p :: t ->
+        (match Prop.loading_mode p with
          | Always | Optional | Default -> aux acc t
          | Defer group ->
            let new_acc =
              match List.assoc_opt group acc with
-             | None -> (group, [ name ]) :: acc
-             | Some p -> (group, name :: p) :: List.remove_assoc group acc
+             | None -> (group, [ Prop.name p ]) :: acc
+             | Some l -> (group, Prop.name p :: l) :: List.remove_assoc group acc
            in
            aux new_acc t)
     in
@@ -84,11 +82,10 @@ module Page_object = struct
   ;;
 
   let resolve_props props =
-    let open Prop in
     Lwt_list.map_p
       (fun t ->
-        let* v = t.resolver () in
-        Lwt.return (t.name, v))
+        let* v = Prop.resolve t in
+        Lwt.return (Prop.name t, v))
       props
   ;;
 
@@ -151,11 +148,10 @@ let location request target =
 ;;
 
 let rec merge_props ~from ~into =
-  let open Prop in
   match from with
   | [] -> into
   | hd :: ta ->
-    if List.exists (fun p -> hd.name = p.name) into
+    if List.exists (fun p -> Prop.name hd = Prop.name p) into
     then merge_props ~into ~from:ta
     else merge_props ~into:(hd :: into) ~from:ta
 ;;

@@ -46,5 +46,7 @@ let pp ppf prop =
     prop.loading_mode
 ;;
 
-let name prop = prop.name
-let loading_mode prop = prop.loading_mode
+let name t = t.name
+let loading_mode t = t.loading_mode
+let merging_mode t = t.merging_mode
+let resolve t = t.resolver ()
