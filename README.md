@@ -15,9 +15,7 @@ To install the package, use OPAM:
 ```bash
 opam install dream-inertia
 ```
-Alternatively, you can use nix to install the package:
-```bash
-```
+Alternatively, you can use nix to install the package.
 
 ## Documentation
 
