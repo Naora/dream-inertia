@@ -109,12 +109,12 @@ struct
 end
 
 let inertia_header
-  ?(accept = "text/html, application/xhtml+xml")
-  ?version
-  ?inertia
-  ?(partial = [])
-  ?(component = "Loading")
-  ()
+      ?(accept = "text/html, application/xhtml+xml")
+      ?version
+      ?inertia
+      ?(partial = [])
+      ?(component = "Loading")
+      ()
   =
   let string_header h v = Option.map (fun (v : string) -> h, v) v in
   let version = string_header "X-Inertia-Version" version in

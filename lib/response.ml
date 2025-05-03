@@ -24,9 +24,9 @@ module Page_object = struct
     | All ->
       List.filter
         (fun p ->
-          match Prop.loading_mode p with
-          | Optional | Defer _ -> false
-          | Always | Default -> true)
+           match Prop.loading_mode p with
+           | Optional | Defer _ -> false
+           | Always | Default -> true)
         props
     | Partial keys ->
       List.filter (fun p -> List.mem (Prop.name p) keys || p.loading_mode = Always) props
@@ -35,10 +35,10 @@ module Page_object = struct
   let mergeable_props props =
     List.fold_left
       (fun (merge, deep_merge) p ->
-        match Prop.merging_mode p with
-        | No_merge -> merge, deep_merge
-        | Merge -> Prop.name p :: merge, deep_merge
-        | Deep_merge -> merge, Prop.name p :: deep_merge)
+         match Prop.merging_mode p with
+         | No_merge -> merge, deep_merge
+         | Merge -> Prop.name p :: merge, deep_merge
+         | Deep_merge -> merge, Prop.name p :: deep_merge)
       ([], [])
       props
   ;;
@@ -84,8 +84,8 @@ module Page_object = struct
   let resolve_props props =
     Lwt_list.map_p
       (fun t ->
-        let* v = Prop.resolve t in
-        Lwt.return (Prop.name t, v))
+         let* v = Prop.resolve t in
+         Lwt.return (Prop.name t, v))
       props
   ;;
 

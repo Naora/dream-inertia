@@ -13,13 +13,13 @@ let encrypt_history ?(encrypt = true) inner request =
 ;;
 
 let inertia
-  ?(xsrf = false)
-  ?(encrypt_history = false)
-  ?props
-  ?version
-  ~renderer
-  inner
-  request
+      ?(xsrf = false)
+      ?(encrypt_history = false)
+      ?props
+      ?version
+      ~renderer
+      inner
+      request
   =
   Context.make ~encrypt_history ~version ~renderer ~props ~request;
   if not xsrf
