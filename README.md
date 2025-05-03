@@ -19,7 +19,7 @@ Alternatively, you can use nix to install the package.
 
 ## Documentation
 
-The documentation is available at [https://naora.github.io/dream-inertia/dream-inertia/Dream_inertia/index.html](naora.github.io/dream-inertia).
+The documentation is available at [naora.github.io/dream-inertia](https://naora.github.io/dream-inertia/dream-inertia/Dream_inertia/index.html).
 
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
