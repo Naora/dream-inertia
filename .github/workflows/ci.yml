@@ -11,6 +11,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        ocaml:
+          - 5.2
+          - 4.14
         os:
           - ubuntu-latest
           - macos-latest
@@ -25,7 +28,7 @@ jobs:
       - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v3
         with:
-          ocaml-compiler: 5
+          ocaml-compiler: ${{matrix.ocaml}}
 
       - run: opam install . --deps-only --with-test
 
@@ -41,7 +44,7 @@ jobs:
       - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v3
         with:
-          ocaml-compiler: 5
+          ocaml-compiler: ${{matrix.ocaml}}
       - uses: ocaml/setup-ocaml/lint-doc@v3
 
   lint-fmt:
@@ -52,7 +55,7 @@ jobs:
       - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v3
         with:
-          ocaml-compiler: 5
+          ocaml-compiler: ${{matrix.ocaml}}
       - uses: ocaml/setup-ocaml/lint-fmt@v3
 
   lint-opam:
@@ -63,5 +66,5 @@ jobs:
       - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v3
         with:
-          ocaml-compiler: 5
+          ocaml-compiler: ${{matrix.ocaml}}
       - uses: ocaml/setup-ocaml/lint-opam@v3
