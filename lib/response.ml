@@ -1,100 +1,163 @@
 open Lwt.Syntax
 
-type t =
-  { component : string
-  ; props : Prop.t list
-  ; url : string
-  ; version : string option
-  ; clear_history : bool
-  ; encrypt_history : bool
-  }
-
 type requested_keys =
   | All
   | Partial of string list
 
-let json_of_props ~keys t =
-  let* props =
+module Page_object = struct
+  type t =
+    { component : string
+    ; props : Prop.t list
+    ; url : string
+    ; version : string option
+    ; clear_history : bool
+    ; encrypt_history : bool
+    ; merge_props : string list
+    ; deep_merge_props : string list
+    ; deferred_props : deferred_group list
+    }
+
+  and deferred_group = string * string list
+
+  let filter_props ~keys props =
     match keys with
-    | All -> Prop.resolve_props t.props
-    | Partial keys -> Prop.resolve_props_by_keys ~keys t.props
-  in
-  Lwt.return @@ `Assoc props
-;;
+    | All ->
+      List.filter
+        (fun p ->
+          match Prop.loading_mode p with
+          | Optional | Defer _ -> false
+          | Always | Default -> true)
+        props
+    | Partial keys ->
+      List.filter (fun p -> List.mem (Prop.name p) keys || p.loading_mode = Always) props
+  ;;
 
-let json_of_deferred_props_by_group t =
-  let groups = Prop.deferred_props_by_group t.props in
-  let g = List.map (fun (g, ns) -> g, `List (List.map (fun n -> `String n) ns)) groups in
-  `Assoc g
-;;
+  let mergeable_props props =
+    let open Prop in
+    List.fold_left
+      (fun (merge, deep_merge) { name; merging_mode; _ } ->
+        match merging_mode with
+        | No_merge -> merge, deep_merge
+        | Merge -> name :: merge, deep_merge
+        | Deep_merge -> merge, name :: deep_merge)
+      ([], [])
+      props
+  ;;
 
-let json_of_mergeable_props t =
-  let m, d = Prop.mergeable_props t.props in
-  `List m, `List d
-;;
+  let deferred_props_by_group props =
+    let open Prop in
+    let rec aux acc props =
+      match props with
+      | [] -> acc
+      | { name; loading_mode; _ } :: t ->
+        (match loading_mode with
+         | Always | Optional | Default -> aux acc t
+         | Defer group ->
+           let new_acc =
+             match List.assoc_opt group acc with
+             | None -> (group, [ name ]) :: acc
+             | Some p -> (group, name :: p) :: List.remove_assoc group acc
+           in
+           aux new_acc t)
+    in
+    aux [] props
+  ;;
 
-let json_of_version t =
-  t.version |> Option.map (fun v -> `String v) |> Option.value ~default:`Null
-;;
+  let create ~component ~props ~url ~version ~clear_history ~encrypt_history ~keys =
+    let merge_props, deep_merge_props = mergeable_props props in
+    let deferred_props =
+      match keys with
+      | All -> deferred_props_by_group props
+      | Partial _ -> []
+    in
+    let props = filter_props ~keys props in
+    { component
+    ; props
+    ; url
+    ; version
+    ; clear_history
+    ; encrypt_history
+    ; merge_props
+    ; deep_merge_props
+    ; deferred_props
+    }
+  ;;
 
-let to_json ~keys t =
-  let* props = json_of_props ~keys t in
-  let merge_props, deep_merge_props = json_of_mergeable_props t in
-  let deferred_props =
-    match keys with
-    | All -> json_of_deferred_props_by_group t
-    | Partial _ -> `Assoc []
-  in
-  let json =
-    [ "component", `String t.component
-    ; "props", props
-    ; "url", `String t.url
-    ; "version", json_of_version t
-    ; "mergeProps", merge_props
-    ; "deepMergeProps", deep_merge_props
-    ; "deferredProps", deferred_props
-    ; "clearHistory", `Bool t.clear_history
-    ; "encryptHistory", `Bool t.encrypt_history
-    ]
-  in
-  Lwt.return (`Assoc json)
-;;
+  let resolve_props props =
+    let open Prop in
+    Lwt_list.map_p
+      (fun t ->
+        let* v = t.resolver () in
+        Lwt.return (t.name, v))
+      props
+  ;;
 
-let to_string ~keys t =
-  let* y = to_json ~keys t in
-  Lwt.return (Yojson.Safe.to_string y)
-;;
+  let to_json t =
+    let* props = resolve_props t.props in
+    let merge_props = List.map (fun n -> `String n) t.merge_props in
+    let deep_merge_props = List.map (fun n -> `String n) t.deep_merge_props in
+    let deferred_props =
+      List.map
+        (fun (g, ns) -> g, `List (List.map (fun n -> `String n) ns))
+        t.deferred_props
+    in
+    let version =
+      match t.version with
+      | Some v -> `String v
+      | None -> `Null
+    in
+    let json =
+      [ "component", `String t.component
+      ; "props", `Assoc props
+      ; "url", `String t.url
+      ; "version", version
+      ; "mergeProps", `List merge_props
+      ; "deepMergeProps", `List deep_merge_props
+      ; "deferredProps", `Assoc deferred_props
+      ; "clearHistory", `Bool t.clear_history
+      ; "encryptHistory", `Bool t.encrypt_history
+      ]
+    in
+    Lwt.return (`Assoc json)
+  ;;
+
+  let to_string t =
+    let* json = to_json t in
+    let json_str = Yojson.Safe.to_string json in
+    Lwt.return json_str
+  ;;
+end
 
 let respond_with_conflict url =
   let headers = [ "X-Inertia-Location", url ] in
   Dream.respond ~status:`Conflict ~headers ""
 ;;
 
-let respond_with_json ~keys t =
+let respond_with_json page_object =
   let headers = [ "Vary", "X-Inertia"; "X-Inertia", "true" ] in
-  let* json = to_string ~keys t in
+  let* json = Page_object.to_string page_object in
   Dream.json ~headers json
 ;;
 
-let respond_with_html ~context t =
-  let* app = to_string ~keys:All t in
+let respond_with_html ~context page_object =
+  let* app = Page_object.to_string page_object in
   context |> Context.template |> Template.render { app } |> Dream.html
-;;
-
-let respond ~context t =
-  match Context.request_kind context with
-  | Initial_load -> respond_with_html ~context t
-  | Inertia_request -> respond_with_json ~keys:All t
-  | Inertia_partial_request { component; requested_keys } ->
-    if component <> t.component
-    then respond_with_json ~keys:All t
-    else respond_with_json ~keys:(Partial requested_keys) t
 ;;
 
 let location request target =
   match Context.of_request request |> Context.request_kind with
   | Initial_load -> Dream.redirect request target
   | _ -> Dream.respond ~status:`Conflict ~headers:[ "X-Inertia-Location", target ] ""
+;;
+
+let rec merge_props ~from ~into =
+  let open Prop in
+  match from with
+  | [] -> into
+  | hd :: ta ->
+    if List.exists (fun p -> hd.name = p.name) into
+    then merge_props ~into ~from:ta
+    else merge_props ~into:(hd :: into) ~from:ta
 ;;
 
 let is_version_stale request version =
@@ -106,22 +169,24 @@ let is_version_stale request version =
 let render ~component ?(props = []) ?(clear_history = false) request =
   let context = Context.of_request request in
   let version = Context.version context in
+  let encrypt_history = Context.encrypt_history context in
   let props =
     Context.shared_props context
-    |> Option.map (fun s -> Prop.merge_props ~from:s ~into:props)
+    |> Option.map (fun s -> merge_props ~from:s ~into:props)
     |> Option.value ~default:props
   in
   let url = Dream.target request in
   match is_version_stale request version, Dream.method_ request with
   | true, `GET -> respond_with_conflict url
   | _, _ ->
-    respond
-      ~context
-      { component
-      ; props
-      ; url
-      ; version
-      ; clear_history
-      ; encrypt_history = context.encrypt_history
-      }
+    let partial_page_object =
+      Page_object.create ~component ~props ~url ~version ~clear_history ~encrypt_history
+    in
+    (match Context.request_kind context with
+     | Initial_load -> respond_with_html ~context @@ partial_page_object ~keys:All
+     | Inertia_request -> respond_with_json @@ partial_page_object ~keys:All
+     | Inertia_partial_request { component = c; requested_keys } ->
+       if c <> component
+       then respond_with_json @@ partial_page_object ~keys:All
+       else respond_with_json @@ partial_page_object ~keys:(Partial requested_keys))
 ;;
