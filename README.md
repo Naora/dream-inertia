@@ -15,54 +15,17 @@ To install the package, use OPAM:
 ```bash
 opam install dream-inertia
 ```
-## Usage
-To use the package, you need to create a Dream server and configure it to use Inertia. Here is an example:
-```ocaml
-open Dream
-open Inertia
-let () =
-  Dream.run
-  @@ Dream.logger
-  @@ Dream.router [
-    Inertia.get "/"
-      (fun request ->
-        let inertia = Inertia.create ~page:"Home" ~props:[] () in
-        Inertia.render inertia);
-    Inertia.post "/"
-      (fun request ->
-        let inertia = Inertia.create ~page:"Home" ~props:[] () in
-        Inertia.render inertia);
-  ]
-  |> Dream.serve
+Alternatively, you can use nix to install the package:
+```bash
 ```
-## Configuration
-To configure Inertia, you can use the `Inertia.configure` function. Here is an example:
-```ocaml
-open Dream
-open Inertia
-let () =
-  Inertia.configure
-    ~csrf_token:"my_csrf_token"
-    ~history_encryption:true
-    ~clear_history:true
-    ~shared_data:[("key", "value")]
-    ();
-  Dream.run
-  @@ Dream.logger
-  @@ Dream.router [
-    Inertia.get "/"
-      (fun request ->
-        let inertia = Inertia.create ~page:"Home" ~props:[] () in
-        Inertia.render inertia);
-    Inertia.post "/"
-      (fun request ->
-        let inertia = Inertia.create ~page:"Home" ~props:[] () in
-        Inertia.render inertia);
-  ]
-  |> Dream.serve
-```
+
+## Documentation
+
+The documentation is available at [https://naora.github.io/dream-inertia/dream-inertia/Dream_inertia/index.html](naora.github.io/dream-inertia).
+
 ## License
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
 ## TODO
 - [x] Support for Inertia.js
 - [x] Support for Dream web framework

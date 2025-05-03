@@ -2,11 +2,11 @@
  (public_name dream_inertia)
  (name main)
  (libraries dream_inertia yojson)
- (preprocess 
+ (preprocess
   (pps ppx_yojson_conv)))
 
 (rule
  (targets index.ml)
  (deps index.eml.html)
- (action 
+ (action
   (run dream_eml %{deps} --workspace %{workspace_root})))

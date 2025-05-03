@@ -1,5 +1,5 @@
 (test
  (name test_dream_inertia)
  (libraries dream_inertia)
- (preprocess 
+ (preprocess
   (pps lwt_ppx)))
