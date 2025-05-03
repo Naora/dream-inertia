@@ -21,9 +21,8 @@
       (* This render function is for demo purpose use a proper template engine *)
       let render page_data =
         Fmt.str
-          "<head></head><body><div id="app" data-page='%a'></div></body>"
-          Template.page_data
-          page_data
+          "<head></head><body><div id='app' data-page='%s'></div></body>"
+          (Template.page_data page_data)
       ;;
 
       let home_handler request =
