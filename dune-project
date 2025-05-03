@@ -23,6 +23,7 @@
    fmt 
    yojson 
    ppx_yojson_conv 
+   (lwt_ppx :with-test)
    dune)
  (tags
   (inertia dream protocol web)))
