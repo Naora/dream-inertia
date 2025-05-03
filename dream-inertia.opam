@@ -15,6 +15,7 @@ depends: [
   "fmt"
   "yojson"
   "ppx_yojson_conv"
+  "ocamlformat" {with-dev}
   "lwt_ppx" {with-test}
   "dune" {>= "3.14"}
   "odoc" {with-doc}

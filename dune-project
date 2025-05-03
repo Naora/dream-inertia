@@ -23,6 +23,7 @@
    fmt 
    yojson 
    ppx_yojson_conv 
+   (ocamlformat :with-test)
    (lwt_ppx :with-test)
    dune)
  (tags
