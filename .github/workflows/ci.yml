@@ -44,7 +44,7 @@ jobs:
       - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v3
         with:
-          ocaml-compiler: ${{ matrix.ocaml }}
+          ocaml-compiler: 5.2 
       - uses: ocaml/setup-ocaml/lint-doc@v3
 
   lint-fmt:
@@ -55,7 +55,7 @@ jobs:
       - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v3
         with:
-          ocaml-compiler: ${{ matrix.ocaml }}
+          ocaml-compiler: 5.2 
       - uses: ocaml/setup-ocaml/lint-fmt@v3
 
   lint-opam:
@@ -66,5 +66,5 @@ jobs:
       - name: Set-up OCaml
         uses: ocaml/setup-ocaml@v3
         with:
-          ocaml-compiler: ${{ matrix.ocaml }}
+          ocaml-compiler: 5.2 
       - uses: ocaml/setup-ocaml/lint-opam@v3
