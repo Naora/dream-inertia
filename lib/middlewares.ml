@@ -21,7 +21,7 @@ let inertia
   inner
   request
   =
-  Context.create ~encrypt_history ~version ~renderer ~props ~request;
+  Context.make ~encrypt_history ~version ~renderer ~props ~request;
   if not xsrf
   then inner request
   else (

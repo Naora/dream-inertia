@@ -61,7 +61,7 @@ module Page_object = struct
     aux [] props
   ;;
 
-  let create ~component ~props ~url ~version ~clear_history ~encrypt_history ~keys =
+  let make ~component ~props ~url ~version ~clear_history ~encrypt_history ~keys =
     let merge_props, deep_merge_props = mergeable_props props in
     let deferred_props =
       match keys with
@@ -176,7 +176,7 @@ let render ~component ?(props = []) ?(clear_history = false) request =
   | true, `GET -> respond_with_conflict url
   | _, _ ->
     let partial_page_object =
-      Page_object.create ~component ~props ~url ~version ~clear_history ~encrypt_history
+      Page_object.make ~component ~props ~url ~version ~clear_history ~encrypt_history
     in
     (match Context.request_kind context with
      | Initial_load -> respond_with_html ~context @@ partial_page_object ~keys:All

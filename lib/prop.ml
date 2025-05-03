@@ -18,7 +18,7 @@ and loading_kind =
   | Always
   | Optional
 
-let create ?(merge = No_merge) ?(load = Default) name resolver =
+let make ?(merge = No_merge) ?(load = Default) name resolver =
   { name; resolver; merging_mode = merge; loading_mode = load }
 ;;
 

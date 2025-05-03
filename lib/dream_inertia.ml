@@ -2,8 +2,8 @@ module Prop = Prop
 module Template = Template
 
 (* Property helpers *)
-let prop = Prop.create
-let defer ?(group = "default") = Prop.create ~load:(Defer group)
+let prop = Prop.make
+let defer ?(group = "default") = Prop.make ~load:(Defer group)
 
 (* Render helpers *)
 let page_app = Template.page_app

@@ -5,7 +5,7 @@
 (** {1 Property helpers} *)
 
 (** [prop ?merge ?load page_component resolver] creates a property with optional merge and loading modes. The default
-    loading mode is [Default]. The default merge mode is [No_merge]. *)
+    loading mode is [Default]. The default merge mode is [No_merge]. This is a alias for {!Prop.make}. *)
 val prop
   :  ?merge:Prop.merge_kind
   -> ?load:Prop.loading_kind

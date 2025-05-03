@@ -47,7 +47,7 @@ let pp ppf t =
 
 let field = Dream.new_field ~name:"context" ~show_value:(fun c -> Fmt.str "%a" pp c) ()
 
-let create ~encrypt_history ~request ~props ~version ~renderer =
+let make ~encrypt_history ~request ~props ~version ~renderer =
   let get_data_keys data_keys =
     String.split_on_char ',' data_keys
     |> List.filter_map (fun s ->
@@ -64,7 +64,7 @@ let create ~encrypt_history ~request ~props ~version ~renderer =
     | Some "true", _, _ -> Inertia_request
     | _, _, _ -> Initial_load
   in
-  let template = Template.create renderer in
+  let template = Template.make renderer in
   Dream.set_field
     request
     field
