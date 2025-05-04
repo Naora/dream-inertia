@@ -3,8 +3,14 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    flake-parts.url = "github:hercules-ci/flake-parts";
-    nix-overlays.url = "github:nix-ocaml/nix-overlays";
+    flake-parts= { 
+      url = "github:hercules-ci/flake-parts"; 
+      inputs.nixpkgs.follows = "nixpkgs"; 
+    };
+    nix-overlays= { 
+      url = "github:nix-ocaml/nix-overlays"; 
+      inputs.nixpkgs.follows = "nixpkgs"; 
+    };
   };
 
   outputs = inputs@{ self, nixpkgs, flake-parts, nix-overlays, ... }: 
