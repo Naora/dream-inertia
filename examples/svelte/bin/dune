@@ -1,7 +1,7 @@
 (executable
- (public_name dream_inertia)
+ (public_name svelte)
  (name main)
- (libraries dream_inertia yojson)
+ (libraries dream dream_inertia yojson)
  (preprocess
   (pps ppx_yojson_conv)))
 

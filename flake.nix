@@ -1,12 +1,9 @@
 {
-  description = "le fil et la tasse";
+  description = "dream-inertia";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    flake-parts= { 
-      url = "github:hercules-ci/flake-parts"; 
-      inputs.nixpkgs.follows = "nixpkgs"; 
-    };
+    nixpkgs.url = "github:NixOS/nixpkgs";
+    flake-parts.url = "github:hercules-ci/flake-parts"; 
     nix-overlays= { 
       url = "github:nix-ocaml/nix-overlays"; 
       inputs.nixpkgs.follows = "nixpkgs"; 
@@ -16,7 +13,7 @@
   outputs = inputs@{ self, nixpkgs, flake-parts, nix-overlays, ... }: 
   flake-parts.lib.mkFlake { inherit inputs; } {
     systems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin" ];
-    perSystem = { config, system, ... }:
+    perSystem = { config, system, self', ... }:
     let 
       pkgs = nixpkgs.legacyPackages.${system}.appendOverlays [
         nix-overlays.overlays.default
@@ -37,16 +34,16 @@
             ocamlPackages.yojson
             ocamlPackages.ppx_yojson_conv
           ];
-          src = ./.;
+          src = builtins.filterSource(path: type: !(type == "directory" && baseNameOf path == "examples")) ./.;
         };
       };
 
       devShells = {
         default = mkShell {
           inputsFrom = [
-            self.packages.${system}.default
+            self'.packages.default
           ];
-          packages = with pkgs; [
+          buildInputs = with pkgs; [
             nodejs
             ocamlPackages.ocaml-lsp
             ocamlPackages.ocamlformat

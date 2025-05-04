@@ -1,4 +1,4 @@
 (library
  (name dream_inertia)
  (public_name dream-inertia)
- (libraries dream fmt))
+ (libraries dream fmt yojson))
