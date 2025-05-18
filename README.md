@@ -25,19 +25,5 @@ The documentation is available at [naora.github.io/dream-inertia](https://naora.
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## TODO
-- [x] Support for Inertia.js
-- [x] Support for Dream web framework
-- [x] Support for OCaml
-- [x] Support for server-side rendering (SSR)
-- [x] Support for client-side rendering (CSR)
-- [x] Support for shared data
-- [x] Support for location method
-- [x] Support for merged props
-- [x] Support for always props
-- [x] Support for optional props
-- [x] Support for CSRF token
-- [x] Support for history encryption
 - [ ] Support for SSR
 - [ ] Support for error validation on backend side
-
-
